@@ -1,0 +1,11 @@
+version = 0.001
+base = Geo::Postcodes::JP
+author = Ben Bullock
+author_pause = BKB
+email = bkb@cpan.org
+year = 2012
+license = perl
+abstract = handle the Japan Post Office postal code data
+repository = github.com/benkasminbullock/Geo-Postcodes-JP
+bug_tracker = https://github.com/benkasminbullock/Geo-Postcodes-JP/issues
+homepage = http://prepan.org/module/3Yz7PYrBQM

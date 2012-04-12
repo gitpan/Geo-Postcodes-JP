@@ -1,0 +1,28 @@
+build/build.pl
+db/schema.sql
+doc/0TODO
+doc/problems.txt
+lib/Geo/Postcodes/JP.pm
+lib/Geo/Postcodes/JP/DB.pm
+lib/Geo/Postcodes/JP/Process.pm
+lib/Geo/Postcodes/JP/Update.pm
+Makefile.PL
+MANIFEST			This list of files
+README
+t/Geo-Postcodes-JP-Download.t
+t/Geo-Postcodes-JP-DB.t
+t/Geo-Postcodes-JP-Process.t
+t/Geo-Postcodes-JP.t
+t/Process-ken-some.t
+t/KEN_SOME.CSV
+t/run.pl
+tmpl/author
+tmpl/config
+tmpl/DB.pm.tmpl
+tmpl/Main.pm.tmpl
+tmpl/Makefile.PL.tmpl
+tmpl/perl_stuff
+tmpl/Process.pm.tmpl
+tmpl/Update.pm.tmpl
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

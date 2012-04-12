@@ -1,0 +1,32 @@
+use ExtUtils::MakeMaker;
+
+WriteMakefile (
+    NAME => '[% config.base %]',
+    VERSION => '[% config.version %]',
+    ABSTRACT => '[% config.abstract %]',
+    AUTHOR => '[% config.author %] <[% config.email %]>',
+    LICENSE => '[% config.license %]',
+    PREREQ_PM => {
+        'Lingua::JA::Moji' => 0,
+        'Lingua::JA::FindDates' => 0,
+        'DBI' => 0,
+        'DBD::SQLite' => 0,
+    },
+    META_MERGE => {
+        resources => {
+            repository => 'https://[% config.repository %]',
+            homepage => '[% config.homepage %]',
+            bugtracker => '[% config.bug_tracker %]',
+        },
+        no_index => {
+            directory => [
+                'tmpl' 
+            ],
+        }
+    },
+);
+
+# Local variables:
+# mode: perl
+# End:
+

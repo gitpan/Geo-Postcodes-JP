@@ -1,0 +1,8 @@
+* Decide where to put the database file.
+
+* Parse the jigyosyo file.
+
+* Decide how to deal with the non-matching addresses in the jigyosyo file.
+
+* Write a cleanup script to remove generated files.
+

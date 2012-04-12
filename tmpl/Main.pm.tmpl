@@ -1,0 +1,36 @@
+=head1 NAME
+
+[% config.base %] - [% config.abstract %]
+
+=cut
+
+package [% config.base %];
+
+[% INCLUDE "perl_stuff" %]
+
+use Geo::Postcodes::JP::DB qw/connect_db lookup_postcode/;
+
+sub new
+{
+    my ($package, %inputs) = @_;
+    my $db_file = $inputs{db_file};
+    my $object = {};
+    $object->{dbh} = connect_db ($db_file);
+    return bless $object;
+}
+
+sub postcode_to_address
+{
+    my ($object, $postcode) = @_;
+    return lookup_postcode ($object->{dbh}, $postcode);
+}
+
+1;
+
+__END__
+
+[% INCLUDE "author" %]
+
+# Local variables:
+# mode: perl
+# End:
