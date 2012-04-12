@@ -20,9 +20,9 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
-#line 19 "Process.pm.tmpl"
+#line 23 "Process.pm.tmpl"
 
 # Lingua::JA::Moji supplies the routine to convert half-width katakana
 # into full-width katakana.
@@ -61,23 +61,41 @@ my @divisions = (
 
 # These are the fields of the postcode file, in order.
 
-my @fields = qw/number old_postcode new_postcode
-		ken_kana  city_kana  address_kana
-		ken_kanji city_kanji address_kanji
-		a b c d e f/;
+my @fields = qw/
+number
+old_postcode
+new_postcode
+ken_kana
+city_kana
+address_kana
+ken_kanji
+city_kanji
+address_kanji
+a
+b
+c
+d
+e
+f
+/;
 
 my @jigyosyo_fields = qw/
-                            number
-                            kana
-                            kanji
-                            ken_kanji
-                            city_kanji
-                            address_kanji
-                            number
-                            new_postcode
-                            old_postcode
-                            a b c d
-                        /;
+number
+kana
+kanji
+ken_kanji
+city_kanji
+address_kanji
+street_number
+new_postcode
+old_postcode
+a
+b
+c
+d
+
+/;
+#line 73 "Process.pm.tmpl"
 
 =head2 read_ken_all
 
@@ -132,9 +150,81 @@ The values of the hash are
 
 =over
 
-=item something
 
-Generate these entries with the template toolkit.
+=item number
+
+The JIS code number for the region.
+
+
+=item old_postcode
+
+The old three or five digit postcode.
+
+
+=item new_postcode
+
+The new seven digit postcode.
+
+
+=item ken_kana
+
+The kana version of the prefecture.
+
+
+=item city_kana
+
+The kana version of the city.
+
+
+=item address_kana
+
+The kana version of the address.
+
+
+=item ken_kanji
+
+The kanji version of the prefecture.
+
+
+=item city_kanji
+
+The kanji version of the city.
+
+
+=item address_kanji
+
+The kanji version of the address.
+
+
+=item a
+
+Unknown.
+
+
+=item b
+
+Unknown.
+
+
+=item c
+
+Unknown.
+
+
+=item d
+
+Unknown.
+
+
+=item e
+
+Unknown.
+
+
+=item f
+
+Unknown.
+
 
 =back
 
@@ -236,6 +326,12 @@ sub find_duplicates
     return \%duplicates;
 }
 
+=head2 read_jigyosyo
+
+    my $jigyosyo_data = read_jigyosyo ('/path/to/jigyosyo/csv/file');
+
+=cut
+
 sub read_jigyosyo
 {
     my ($input_file) = @_;
@@ -268,6 +364,93 @@ sub read_jigyosyo
     return \@jigyosho_postcodes;
 }
 
+=head2 process_jigyosyo_line
+
+    my %values = process_jigyosyo_line ($line);
+
+Turn the array reference C<$line> into a hash of its values using the
+fields.
+
+The values of the hash are 
+
+=over
+
+
+=item number
+
+As for the main postcode file.
+
+
+=item kana
+
+The name of the place of business in kana.
+
+
+=item kanji
+
+The name of the place of business in kanji.
+
+
+=item ken_kanji
+
+The kanji version of the prefecture name.
+
+
+=item city_kanji
+
+The kanji version of the city name.
+
+
+=item address_kanji
+
+The kanji version of the address name.
+
+
+=item street_number
+
+The exact street number of the place of business.
+
+
+=item new_postcode
+
+As for the "ken_all" fields.
+
+
+=item old_postcode
+
+As for the "ken_all" fields.
+
+
+=item a
+
+Unknown.
+
+
+=item b
+
+Unknown.
+
+
+=item c
+
+Unknown.
+
+
+=item d
+
+Unknown.
+
+
+=item 
+
+
+
+
+=back
+
+=cut
+
+
 sub process_jigyosyo_line
 {
     my ($line) = @_;
@@ -285,13 +468,52 @@ __END__
 
 =over
 
+=item postcode
+
+In this module, "postcode" is the translation used for the Japanese
+term "yuubin bangou" (郵便番号). They might be called "postal codes"
+or even "zip codes" by some. 
+
+This module only deals with the seven-digit modern postcodes. It does
+not deal with the old three and five digit postcodes, these are not
+parsed from the file.
+
 =item ken
+
+"Ken" means the Japanese system of prefectures, which includes the
+"ken" divisions as well as the "do/fu/to" divisions, with "do" used
+for Hokkaido, "fu" for Osaka and Kyoto, and "to" for the Tokyo
+metropolis. These are got from the module using the word "ken".
+
+See also L<the sci.lang.japan FAQ on Japanese addresses|http://www.sljfaq.org/afaq/addresses.html>.
 
 =item city
 
+In this module, "city" is the term used to point to the second field
+in the postcode data file. Some of these are actually cities, like
+"Mito-shi" (水戸市), the city of Mito in Ibaraki prefecture. However,
+some of them are not really cities but other geographical
+subdivisions.
+
 =item address
 
+In this module, "address" is the term used to point to the third field
+in the postcode data file. 
+
+=item jigyosyo
+
+In this module, "jigyosyo" is the term used to point to places of
+business. Some places of business have their own postcodes,
+
 =back
+
+For example, in the following data file entry, "3100004" is the
+postcode, "茨城県" (Ibaraki-ken) is the "ken", "水戸市" (Mito-shi) is
+the "city", and "青柳町" (Aoyagicho) is the "address".
+
+08201,"310  ","3100004","ｲﾊﾞﾗｷｹﾝ","ﾐﾄｼ","ｱｵﾔｷﾞﾁｮｳ","茨城県","水戸市","青柳町",0,0,0,0,0,0
+
+
 
 =head1 SEE ALSO
 

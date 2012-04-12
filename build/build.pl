@@ -52,6 +52,9 @@ my $tt = Template->new (
     ENCODING => 'utf8',
 );
 
+$vars{ken_all_fields} = get_ken_all_fields ("$FindBin::Bin/ken-all-fields.txt");
+$vars{jigyosyo_fields} = get_ken_all_fields ("$FindBin::Bin/jigyosyo-fields.txt");
+
 # Process the Perl module template files.
 
 for my $template (@pm_templates) {
@@ -148,4 +151,31 @@ sub rm_file
     if (-f $file) {
         unlink $file or die $!;
     }
+}
+
+sub get_ken_all_fields
+{
+    my ($file) = @_;
+    open my $input, "<:encoding(utf8)", $file
+        or die $!;
+    my @ken_all_fields;
+    my $field = {};
+    push @ken_all_fields, $field;
+    while (<$input>) {
+        chomp;
+        if (/^\s*$/) {
+            $field = {};
+            push @ken_all_fields, $field;
+        }
+        else {
+            if (! $field->{name}) {
+                $field->{name} = $_;
+            }
+            else {
+                $field->{description} .= $_;
+            }
+        }
+    }
+    close $input or die $!;
+    return \@ken_all_fields;
 }

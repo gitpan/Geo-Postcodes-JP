@@ -1,36 +1,51 @@
-=head1 NAME
-
-Geo::Postcodes::JP - handle the Japan Post Office postal code data
-
-=cut
-
 package Geo::Postcodes::JP;
 
 use warnings;
 use strict;
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 
-use Geo::Postcodes::JP::DB qw/connect_db lookup_postcode/;
+use Geo::Postcodes::JP::DB;
 
 sub new
 {
     my ($package, %inputs) = @_;
     my $db_file = $inputs{db_file};
     my $object = {};
-    $object->{dbh} = connect_db ($db_file);
+    $object->{db} = Geo::Postcodes::JP::DB->new (%inputs);
     return bless $object;
 }
 
 sub postcode_to_address
 {
     my ($object, $postcode) = @_;
-    return lookup_postcode ($object->{dbh}, $postcode);
+    my $address = $object->{db}->lookup_postcode ($postcode);
+    return $address;
 }
 
 1;
 
 __END__
+
+=head1 NAME
+
+Geo::Postcodes::JP - handle the Japan Post Office postal code data
+
+=head1 SYNOPSIS
+
+    my $gpj = Geo::Postcodes::JP->new (
+        db_file => '/path/to/database/file',
+    );
+    my $address = $gpj->postcode_to_address ();
+    # Now $address contains the address as a hash reference
+
+=head1 DESCRIPTION
+
+To use this, you need to have built the database already.
+
+The scripts to build the database are in the F<xt> directory of the
+distribution. You need to edit these scripts to point to the files you
+want to use.
 
 =head1 AUTHOR
 

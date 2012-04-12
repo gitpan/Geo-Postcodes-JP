@@ -1,3 +1,5 @@
+=encoding UTF-8
+
 =head1 NAME
 
 Geo::Postcodes::JP::DB - database of Japanese postal codes
@@ -9,18 +11,16 @@ require Exporter;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw/
                    make_database
-                   add_jigyosyo
                    create_database
-                   connect_db
                    lookup_postcode
                    test_database
                /;
 
 use warnings;
 use strict;
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
-#line 20 "DB.pm.tmpl"
+#line 22 "DB.pm.tmpl"
 
 # Need the postcode-reading function.
 
@@ -59,27 +59,25 @@ sub make_database_from_schema
 
 my $verbose;
 
-my $placename_search_sql = <<EOF;
-select id from %s where kanji=? and kana=?
-EOF
-
-my %placename_search;
+# Generic search for a placename by kanji and kana. This is only used
+# for the "ken" and the "jigyosyo" tables, because city and address
+# names are ambiguous.
 
 sub search_placename
 {
-    my ($dbh, $type, $kanji, $kana) = @_;
-    if (! $placename_search{$type}) {
+    my ($o, $type, $kanji, $kana) = @_;
+    if (! $o->{placename_search}{$type}) {
+        my $placename_search_sql = <<EOF;
+select id from %s where kanji=? and kana=?
+EOF
         my $sql = sprintf ($placename_search_sql, $type);
-        $placename_search{$type} = $dbh->prepare ($sql);
-        if (! $placename_search{$type}) {
-            die $dbh->errstr;
-        }
+        $o->{placename_search}{$type} = $o->{dbh}->prepare ($sql);
     }
     if ($verbose) {
         print "Searching for $kanji, $kana\n";
     }
-    $placename_search{$type}->execute ($kanji, $kana);
-    my $placenames = $placename_search{$type}->fetchall_arrayref ();
+    $o->{placename_search}{$type}->execute ($kanji, $kana);
+    my $placenames = $o->{placename_search}{$type}->fetchall_arrayref ();
     my $placename_id;
     if ($placenames) {
         if (@$placenames > 1) {
@@ -103,22 +101,20 @@ sub search_placename
 # There are some cities with the same names in different prefectures,
 # for example there is a 府中市 (Fuchuu-shi) in Tokyo and one in
 # Hiroshima prefecture, so we need to have a "city_search" routine
-# rather than using a generic search for the cities.
-
-my $city_search_sql = <<EOF;
-select id from city where kanji=? and ken_id=?
-EOF
-
-my $city_search;
+# rather than using the "search_placename" generic search for the
+# cities.
 
 sub city_search
 {
-    my ($dbh, $kanji, $ken_id) = @_;
-    if (! $city_search) {
-        $city_search = $dbh->prepare ($city_search_sql);
+    my ($o, $kanji, $ken_id) = @_;
+    if (! $o->{city_search}) {
+        my $city_search_sql = <<EOF;
+select id from city where kanji=? and ken_id=?
+EOF
+        $o->{city_search} = $o->{dbh}->prepare ($city_search_sql);
     }
-    $city_search->execute ($kanji, $ken_id);
-    my $cities = $city_search->fetchall_arrayref ();
+    $o->{city_search}->execute ($kanji, $ken_id);
+    my $cities = $o->{city_search}->fetchall_arrayref ();
     my $city_id;
     if ($cities) {
         if (@$cities > 1) {
@@ -139,20 +135,19 @@ sub city_search
     return $city_id;
 }
 
-my $address_search_sql = <<EOF;
-select id from address where kanji=? and kana=? and city_id=?
-EOF
-
-my $address_search;
+# Search for an "address" in a particular city, specified by $city_id.
 
 sub address_search
 {
-    my ($dbh, $kanji, $kana, $city_id) = @_;
-    if (! $address_search) {
-        $address_search = $dbh->prepare ($address_search_sql);
+    my ($o, $kanji, $kana, $city_id) = @_;
+    if (! $o->{address_search}) {
+        my $address_search_sql = <<EOF;
+select id from address where kanji=? and kana=? and city_id=?
+EOF
+        $o->{address_search} = $o->{dbh}->prepare ($address_search_sql);
     }
-    $address_search->execute ($kanji, $kana, $city_id);
-    my $addresses = $address_search->fetchall_arrayref ();
+    $o->{address_search}->execute ($kanji, $kana, $city_id);
+    my $addresses = $o->{address_search}->fetchall_arrayref ();
     my $address_id;
     if ($addresses) {
         if (@$addresses > 1) {
@@ -175,7 +170,8 @@ sub address_search
 
 =head2
 
-Search using only the kanji for the name.
+Like L</search_placename>, but search for a place name using only the
+kanji for the name.
 
 =cut
 
@@ -183,23 +179,15 @@ my $placename_search_kanji_sql = <<EOF;
 select id from %s where kanji=?
 EOF
 
-my %placename_search_kanji;
-
 sub search_placename_kanji
 {
-    my ($dbh, $type, $kanji) = @_;
-    if (! $placename_search_kanji{$type}) {
+    my ($o, $type, $kanji) = @_;
+    if (! $o->{placename_search_kanji}{$type}) {
         my $sql = sprintf ($placename_search_kanji_sql, $type);
-        $placename_search_kanji{$type} = $dbh->prepare ($sql);
-        if (! $placename_search_kanji{$type}) {
-            die $dbh->errstr;
-        }
+        $o->{placename_search_kanji}{$type} = $o->{dbh}->prepare ($sql);
     }
-    if ($verbose) {
-        print "Searching for '$kanji'.\n";
-    }
-    $placename_search_kanji{$type}->execute ($kanji);
-    my $placenames = $placename_search_kanji{$type}->fetchall_arrayref ();
+    $o->{placename_search_kanji}{$type}->execute ($kanji);
+    my $placenames = $o->{placename_search_kanji}{$type}->fetchall_arrayref ();
     my $placename_id;
     if ($placenames) {
         if (@$placenames > 1) {
@@ -220,49 +208,46 @@ sub search_placename_kanji
     return $placename_id;
 }
 
-# SQL to insert postcodes into the table.
-
-my $postcode_insert_sql = <<EOF;
-insert into postcodes (postcode, address_id)
-values (?, ?)
-EOF
-
-my $postcode_insert_sth;
+# Insert a postcode with an address.
 
 sub insert_postcode
 {
-    my ($dbh, $postcode, $address_id) = @_;
+    my ($o, $postcode, $address_id) = @_;
     if (! $postcode) {
         die "No postcode";
     }
-    if (! $postcode_insert_sth) {
-        $postcode_insert_sth = $dbh->prepare ($postcode_insert_sql);
+    if (! $o->{postcode_insert_sth}) {
+        # SQL to insert postcodes into the table.
+        my $postcode_insert_sql = <<EOF;
+insert into postcodes (postcode, address_id)
+values (?, ?)
+EOF
+        $o->{postcode_insert_sth} = $o->{dbh}->prepare ($postcode_insert_sql);
     }
-    $postcode_insert_sth->execute ($postcode, $address_id);
+    $o->{postcode_insert_sth}->execute ($postcode, $address_id);
 }
 
-# SQL to insert postcodes with jigyosyo into the table.
-
-my $jigyosyo_postcode_insert_sql = <<EOF;
-insert into postcodes (postcode, address_id, jigyosyo_id)
-values (?, ?, ?)
-EOF
-
-my $jigyosyo_postcode_insert_sth;
+# Insert a postcode for a jigyosyo into the table.
 
 sub jigyosyo_insert_postcode
 {
-    my ($dbh, $postcode, $address_id, $jigyosyo_id) = @_;
+    my ($o, $postcode, $address_id, $jigyosyo_id) = @_;
     if (! $postcode) {
         die "No postcode";
     }
     if (0) {
         print "Inserting $postcode\n";
     }
-    if (! $jigyosyo_postcode_insert_sth) {
-        $jigyosyo_postcode_insert_sth = $dbh->prepare ($jigyosyo_postcode_insert_sql);
+    if (! $o->{jigyosyo_postcode_insert_sth}) {
+        # SQL to insert postcodes with jigyosyo into the table.
+
+        my $jigyosyo_postcode_insert_sql = <<EOF;
+insert into postcodes (postcode, address_id, jigyosyo_id)
+values (?, ?, ?)
+EOF
+        $o->{jigyosyo_postcode_insert_sth} = $o->{dbh}->prepare ($jigyosyo_postcode_insert_sql);
     }
-    $jigyosyo_postcode_insert_sth->execute ($postcode,
+    $o->{jigyosyo_postcode_insert_sth}->execute ($postcode,
                                             $address_id, $jigyosyo_id);
 }
 
@@ -272,22 +257,17 @@ my $jigyosyo_insert_sql = <<'EOF';
 insert into jigyosyo (kanji, kana) values (?, ?)
 EOF
 
-# Statement handles for inserting place names of various types into
-# the database.
-
-my $jigyosyo_insert_sth;
-
 sub jigyosyo_insert
 {
-    my ($dbh, $kanji, $kana) = @_;
+    my ($o, $kanji, $kana) = @_;
     if ($verbose) {
         print "Inserting jigyosyo $kanji/$kana\n";
     }
-    if (! $jigyosyo_insert_sth) {
-        $jigyosyo_insert_sth = $dbh->prepare ($jigyosyo_insert_sql);
+    if (! $o->{jigyosyo_insert_sth}) {
+        $o->{jigyosyo_insert_sth} = $o->{dbh}->prepare ($jigyosyo_insert_sql);
     }
-    $jigyosyo_insert_sth->execute ($kanji, $kana);
-    my $id = $dbh->last_insert_id (0, 0, 0, 0);
+    $o->{jigyosyo_insert_sth}->execute ($kanji, $kana);
+    my $id = $o->{dbh}->last_insert_id (0, 0, 0, 0);
     return $id;
 }
 
@@ -298,76 +278,74 @@ my $ken_insert_sql = <<'EOF';
 insert into ken (kanji, kana) values (?, ?)
 EOF
 
-# Statement handles for inserting place names of various types into
-# the database.
-
-my $ken_insert_sth;
-
 sub ken_insert
 {
-    my ($dbh, $kanji, $kana) = @_;
+    my ($o, $kanji, $kana) = @_;
     if ($verbose) {
         print "Inserting ken $kanji/$kana\n";
     }
-    if (! $ken_insert_sth) {
-        $ken_insert_sth = $dbh->prepare ($ken_insert_sql);
+    if (! $o->{ken_insert_sth}) {
+        $o->{ken_insert_sth} = $o->{dbh}->prepare ($ken_insert_sql);
     }
-    $ken_insert_sth->execute ($kanji, $kana);
-    my $id = $dbh->last_insert_id (0, 0, 0, 0);
+    $o->{ken_insert_sth}->execute ($kanji, $kana);
+    my $id = $o->{dbh}->last_insert_id (0, 0, 0, 0);
     return $id;
 }
 
 # City
 
-my $city_insert_sql = <<'EOF';
-insert into city (kanji, kana, ken_id) values (?, ?, ?)
-EOF
-
-my $city_insert_sth;
-
 sub city_insert
 {
-    my ($dbh, $kanji, $kana, $ken_id) = @_;
-    if (! $city_insert_sth) {
-        $city_insert_sth = $dbh->prepare ($city_insert_sql);
+    my ($o, $kanji, $kana, $ken_id) = @_;
+    if (! $o->{city_insert_sth}) {
+        my $city_insert_sql = <<'EOF';
+insert into city (kanji, kana, ken_id) values (?, ?, ?)
+EOF
+        $o->{city_insert_sth} = $o->{dbh}->prepare ($city_insert_sql);
     }
-    $city_insert_sth->execute ($kanji, $kana, $ken_id);
-    my $id = $dbh->last_insert_id (0, 0, 0, 0);
+    $o->{city_insert_sth}->execute ($kanji, $kana, $ken_id);
+    my $id = $o->{dbh}->last_insert_id (0, 0, 0, 0);
     return $id;
 }
 
 # Address
 
-my $address_insert_sql = <<'EOF';
-insert into address (kanji, kana, city_id) values (?, ?, ?)
-EOF
-
-my $address_insert_sth;
-
 sub address_insert
 {
-    my ($dbh, $kanji, $kana, $city_id) = @_;
-    if (! $address_insert_sth) {
-        $address_insert_sth = $dbh->prepare ($address_insert_sql);
+    my ($o, $kanji, $kana, $city_id) = @_;
+    if (! $o->{address_insert_sth}) {
+        my $address_insert_sql = <<'EOF';
+insert into address (kanji, kana, city_id) values (?, ?, ?)
+EOF
+        $o->{address_insert_sth} = $o->{dbh}->prepare ($address_insert_sql);
     }
-    $address_insert_sth->execute ($kanji, $kana, $city_id);
-    my $id = $dbh->last_insert_id (0, 0, 0, 0);
+    $o->{address_insert_sth}->execute ($kanji, $kana, $city_id);
+    my $id = $o->{dbh}->last_insert_id (0, 0, 0, 0);
     return $id;
 }
 
+=head2 db_connect
 
-sub connect_db
+    $o->db_connect ('/path/to/database/file');
+
+=cut
+
+sub db_connect
 {
-    my ($db_file) = @_;
-    my $dbh = DBI->connect ("dbi:SQLite:dbname=$db_file", "", "",
-                        {RaiseError => 1} 
-                    );
-    return $dbh;
+    my ($o, $db_file) = @_;
+    $o->{dbh} = DBI->connect ("dbi:SQLite:dbname=$db_file", "", "",
+                          {
+                              RaiseError => 1,
+                              # Set this to '1' to avoid mojibake.
+                              sqlite_unicode => 1,
+                          }
+                      );
+    $o->{db_file} = $db_file;
 }
 
 =head2 insert_postcodes
 
-    insert_postcodes ($db_file, $postcodes);
+    $o->insert_postcodes ($postcodes);
 
 Insert the postcodes in the array reference C<$postcodes> into the
 database specified by C<$db_file>.
@@ -376,10 +354,9 @@ database specified by C<$db_file>.
 
 sub insert_postcodes
 {
-    my ($db_file, $postcodes) = @_;
-    my $dbh = connect_db ($db_file);
+    my ($o, $postcodes) = @_;
 
-    $dbh->{AutoCommit} = 0;
+    $o->{dbh}->{AutoCommit} = 0;
     for my $postcode (@$postcodes) {
         # for my $k (keys %$postcode) {
         #     print "$k -> $postcode->{$k}\n";
@@ -388,32 +365,33 @@ sub insert_postcodes
         my %values = process_line ($postcode);
         my $ken_kana = hw2katakana ($values{ken_kana});
         my $ken_kanji = $values{ken_kanji};
-        my $ken_id = search_placename ($dbh, 'ken', $ken_kanji, $ken_kana);
+        my $ken_id = $o->search_placename ('ken', $ken_kanji, $ken_kana);
         if (! defined $ken_id) {
-            $ken_id = ken_insert ($dbh, $ken_kanji, $ken_kana);
+            $ken_id = $o->ken_insert ($ken_kanji, $ken_kana);
         }
         my $city_kana = hw2katakana ($values{city_kana});
         my $city_kanji = $values{city_kanji};
-        my $city_id = city_search ($dbh, $city_kanji, $ken_id);
+        my $city_id = $o->city_search ($city_kanji, $ken_id);
         if (! defined $city_id) {
-            $city_id = city_insert ($dbh, $city_kanji, $city_kana, $ken_id);
+            $city_id = $o->city_insert ($city_kanji, $city_kana, $ken_id);
         }
         my $address_kana = hw2katakana ($values{address_kana});
         my $address_kanji = $values{address_kanji};
-        my $address_id = address_search ($dbh, 'address',
+        my $address_id = $o->address_search ('address',
                                          $address_kanji, $address_kana,
                                          $city_id);
         if (! defined $address_id) {
-            $address_id = address_insert ($dbh, $address_kanji,
-                                          $address_kana, $city_id);
+            $address_id = $o->address_insert ($address_kanji,
+                                              $address_kana, $city_id);
         }
         my $pc = $values{new_postcode};
         if (! defined $pc) {
             die "No postcode defined";
         }
-        insert_postcode ($dbh, $pc, $address_id);
+        $o->insert_postcode ($pc, $address_id);
     }
-    $dbh->commit ();
+    $o->{dbh}->commit ();
+    $o->{dbh}->{AutoCommit} = 1;
 }
 
 =head2 create_database
@@ -435,7 +413,7 @@ sub create_database
     my $schema_file = $inputs{schema_file};
     my $verbose = $inputs{verbose};
     if (! $db_file) {
-        croak "Specify the database file with db_file => 'file name'";
+        croak "Specify the database file";
     }
     if (! $schema_file) {
         croak "Specify the schema file with schema_file => 'file name'";
@@ -463,8 +441,7 @@ the database specified by C<db_file>.
 
 sub insert_postcode_file
 {
-    my (%inputs) = @_;
-    my $db_file = $inputs{db_file};
+    my ($o, %inputs) = @_;
     my $verbose = $inputs{verbose};
     my $postcode_file = $inputs{postcode_file};
     if (! $postcode_file) {
@@ -474,12 +451,12 @@ sub insert_postcode_file
         print "Reading postcodes from '$postcode_file'.\n";
     }
     my $postcodes = read_ken_all ($postcode_file);
-    insert_postcodes ($db_file, $postcodes);
+    $o->insert_postcodes ($postcodes);
 }
 
 =head2 make_database
 
-    make_database (
+    my $o = make_database (
         db_file => '/path/to/database/file',
         schema_file => '/path/to/schema/file',
         postcode_file => '/path/to/postcode/file',
@@ -494,12 +471,14 @@ sub make_database
 {
     my (%inputs) = @_;
     create_database (%inputs);
-    insert_postcode_file (%inputs);
+    my $o = __PACKAGE__->new (%inputs);
+    $o->insert_postcode_file (%inputs);
+    return $o;
 }
 
 =head2 lookup_address
 
-    my $address_id = lookup_address ($dbh,
+    my $address_id = lookup_address ($o,
         ken => '北海道',
         city => '',
         address => '',
@@ -510,12 +489,10 @@ the city name, and the address name.
 
 =cut
 
-my $lookup_sth;
-
 sub lookup_address
 {
-    my ($dbh, %inputs) = @_;
-    if (! $lookup_sth) {
+    my ($o, %inputs) = @_;
+    if (! $o->{lookup_sth}) {
         my $sql = <<EOF;
 select address.id  from ken, city, address where 
 ken.kanji = ? and
@@ -524,16 +501,15 @@ address.kanji = ? and
 ken.id = city.ken_id and
 city.id = address.city_id
 EOF
-        $lookup_sth = $dbh->prepare ($sql);
+        $o->{lookup_sth} = $o->{dbh}->prepare ($sql);
     }
-    $lookup_sth->execute ($inputs{ken}, $inputs{city}, $inputs{address});
-    my $return = $lookup_sth->fetchall_arrayref ();
+    $o->{lookup_sth}->execute ($inputs{ken}, $inputs{city}, $inputs{address});
+    my $return = $o->{lookup_sth}->fetchall_arrayref ();
     if (scalar @$return > 1) {
         die "Too many results for $inputs{ken}, $inputs{city}, $inputs{address}";
     }
     if ($return->[0]) {
-#        print "@{$return->[0]}\n";
-        return @{$return->[0]};
+        return $return->[0]->[0];
     }
     else {
         return ();
@@ -542,7 +518,7 @@ EOF
 
 =head2 add_jigyosyo
 
-    add_jigyosyo (
+    $o->add_jigyosyo (
         db_file => '/path/to/database/file',
         jigyosyo_file => '/path/to/jigyosyo.csv',
     );
@@ -554,12 +530,10 @@ the database specified by C<db_file>.
 
 sub add_jigyosyo
 {
-    my (%inputs) = @_;
+    my ($o, %inputs) = @_;
     my %total;
     $total{found} = 0;
-    my $db_file = $inputs{db_file};
-    my $dbh = connect_db ($db_file);
-    $dbh->{AutoCommit} = 0;
+    $o->{dbh}->{AutoCommit} = 0;
     my $jigyosyo_file = $inputs{jigyosyo_file};
     my $jigyosyo_postcodes = read_jigyosyo ($jigyosyo_file);
     for my $postcode (@$jigyosyo_postcodes) {
@@ -571,8 +545,7 @@ sub add_jigyosyo
         if ($address =~ /(^|大)字/) {
             $address =~ s/(^|大)字//;
         }
-        my $address_id = lookup_address (
-            $dbh,
+        my $address_id = $o->lookup_address (
             ken => $ken,
             city => $city,
             address => $address,
@@ -585,20 +558,59 @@ sub add_jigyosyo
             $total{found}++;
         }
         else {
-            print "$ken, $city, $address, $values{kanji} Not found.\n";
-            $ken_id = search_placename_kanji ($dbh, 'ken', $ken);
-            $city_id = city_search ($dbh, $city, $ken_id);
-            $address_id = address_insert ($dbh, $address, '?', $city_id);
+#            print "$ken, $city, $address, $values{kanji} Not found.\n";
+            $ken_id = search_placename_kanji ($o, 'ken', $ken);
+            $city_id = city_search ($o, $city, $ken_id);
+            $address_id = address_insert ($o, $address, '?', $city_id);
             $total{notfound}++;
         }
-        my $jigyosyo_id = jigyosyo_insert ($dbh, $values{kanji}, $values{kana});
+        my $jigyosyo_id = jigyosyo_insert ($o, $values{kanji}, $values{kana});
 #        next;
-        jigyosyo_insert_postcode ($dbh, $values{new_postcode},
+        if ($address_id == 1) {
+            die "BAd aadredd ss id \n";
+        }
+        jigyosyo_insert_postcode ($o, $values{new_postcode},
                                   $address_id, $jigyosyo_id);
     }
-    $dbh->commit ();
-    print "Found $total{found}: not found $total{notfound}.\n";
+    $o->{dbh}->commit ();
+    $o->{dbh}->{AutoCommit} = 1;
+#    print "Found $total{found}: not found $total{notfound}.\n";
 }
+
+=head2 lookup_jigyosyo
+
+    my $jigyosyo = lookup_jigyosyo (21);
+
+Given the jigyosyo id number, return its kanji and kana names in a
+hash reference.
+
+=cut
+
+my $jigyosyo_lookup_sql = <<EOF;
+select kanji, kana from jigyosyo
+where
+id = ?
+EOF
+
+sub jigyosyo_lookup
+{
+    my ($o, $jigyosyo_id) = @_;
+    my %jigyosyo;
+    if (! defined $o->{jigyosyo_lookup_sth}) {
+        $o->{jigyosyo_lookup_sth} = $o->{dbh}->prepare ($jigyosyo_lookup_sql);
+    }
+    $o->{jigyosyo_lookup_sth}->execute ($jigyosyo_id);
+    my $r = $o->{jigyosyo_lookup_sth}->fetchall_arrayref ();
+    if (! $r) {
+        return;
+    }
+    if (@$r > 1) {
+        die "Non-unique jigyosyo id number $jigyosyo_id";
+    }
+    @jigyosyo{qw/kanji kana/} = @{$r->[0]};
+    return \%jigyosyo;
+}
+
 
 =head2 lookup_postcode
 
@@ -606,32 +618,60 @@ sub add_jigyosyo
     print $address->{ken}->{kanji}, "\n";
     # Prints 茨城県
 
+Given a postcode, get the corresponding address details.
+
 =cut
 
-my $lookup_postcode_sql = <<EOF;
-select * from postcodes, ken, city, address where postcodes.postcode = ? and city.ken_id = ken.id and address.city_id = city.id and postcodes.address_id = address.id;
-EOF
+my @fields = qw/
+                   postcode
+                   ken_kanji
+                   ken_kana
+                   city_kanji
+                   city_kana
+                   address_kanji
+                   address_kana
+                   jigyosyo_id
+               /;
 
-my $lookup_postcode_sth;
+my $sql_fields = join ",", @fields;
+$sql_fields =~ s/_(kanji|kana)/\.$1/g;
+
+my $lookup_postcode_sql = <<EOF;
+select $sql_fields
+from postcodes, ken, city, address
+where postcodes.postcode = ?
+and
+city.ken_id = ken.id
+and
+address.city_id = city.id
+and
+postcodes.address_id = address.id
+EOF
 
 sub lookup_postcode
 {
-    my ($dbh, $postcode) = @_;
-    if (! $lookup_postcode_sth) {
-        $lookup_postcode_sth = $dbh->prepare ($lookup_postcode_sql);
+    my ($o, $postcode) = @_;
+    if (! $o->{lookup_postcode_sth}) {
+        $o->{lookup_postcode_sth} = $o->{dbh}->prepare ($lookup_postcode_sql);
     }
-    $lookup_postcode_sth->execute ($postcode);
-    my $results = $lookup_postcode_sth->fetchall_arrayref ();
+    $o->{lookup_postcode_sth}->execute ($postcode);
+    my $results = $o->{lookup_postcode_sth}->fetchall_arrayref ();
     if (! $results || @$results == 0) {
         return;
     }
-    print join ", ", @{$results->[0]};
-    print "\n";
-    # my %address;
-    # @address{qw/
-
-    #            /} = 
-    #            @{$results->[0]};
+    my %values;
+    @values{@fields} = @{$results->[0]};
+    if (defined $values{jigyosyo_id}) {
+        my $jigyosyo_values = $o->jigyosyo_lookup ($values{jigyosyo_id});
+        if ($jigyosyo_values) {
+            $values{jigyosyo_kanji} = $jigyosyo_values->{kanji};
+            $values{jigyosyo_kana} = $jigyosyo_values->{kana};
+        }
+    }
+    # Don't leave this in the result, since it is just a database ID
+    # with no meaning to the user.
+    delete $values{jigyosyo_id};
+    return \%values;
 }
 
 =head2 test_database
@@ -640,7 +680,18 @@ sub lookup_postcode
 
 sub test_database
 {
-    my ($db_file, %inputs) = @_;
+    my ($o, %inputs) = @_;
+}
+
+sub new
+{
+    my ($package, %inputs) = @_;
+    my $o = bless {};
+    my $db_file = $inputs{db_file};
+    if ($db_file) {
+        $o->db_connect ($db_file);
+    }
+    return $o;
 }
 
 1;

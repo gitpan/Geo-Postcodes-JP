@@ -3,11 +3,12 @@
 
 use warnings;
 use strict;
-use Test::More tests => 6;
+use Test::More tests => 12;
 BEGIN { use_ok ('Geo::Postcodes::JP::DB') };
-use Geo::Postcodes::JP::DB qw/create_database make_database/;
+use Geo::Postcodes::JP::DB qw/create_database/;
 use FindBin;
 use File::Spec;
+use utf8;
 
 # The directory with the schema in it, "../db".
 
@@ -34,12 +35,12 @@ rm_db ();
 # Try to create the database from the schema using the
 # "create_database" routine.
 
-eval {
+#eval {
     create_database (
+    db_file => $test_db,
         schema_file => $schema_file,
-        db_file => $test_db,
     );
-};
+#};
 
 # Test whether an error occurred in creating the database.
 
@@ -55,13 +56,15 @@ rm_db ();
 
 my $test_pc_file = File::Spec->catpath (undef, $FindBin::Bin, "KEN_SOME.CSV");
 
-#eval {
-    make_database (
-        schema_file => $schema_file,
+my $o;
+
+eval {
+    $o = Geo::Postcodes::JP::DB::make_database (
         db_file => $test_db,
+        schema_file => $schema_file,
         postcode_file => $test_pc_file,
     );
-#};
+};
 
 # Test whether an error occurred in creating the database.
 
@@ -70,6 +73,40 @@ ok (! $@, "Make_database did not die.");
 # Test whether the database file exists.
 
 ok (-f $test_db, "The database file was created.");
+
+# This is the file which contains a testing version of the jigyosyo
+# information.
+
+my $test_jigyosyo_file = File::Spec->catpath (undef, , $FindBin::Bin,
+                                              'jigyosyo-some.csv');
+
+eval {
+    $o->add_jigyosyo (
+        jigyosyo_file => $test_jigyosyo_file,
+    );
+};
+
+# Check the above did not die.
+
+ok (! $@, "Added jigyosyo information did not die");
+
+# Spot check the inserted data.
+
+my $nishionuma = $o->lookup_postcode ('3050054');
+
+ok (defined $nishionuma, "Got a defined result for Nishi Oonuma postcode");
+
+ok ($nishionuma->{address_kanji} eq '西大沼',
+    "The expected address kanji was found");
+ok ($nishionuma->{ken_kanji} eq '茨城県',
+    "The expected ken kanji was found");
+
+my $mitoshiyakusho = $o->lookup_postcode ('3108610');
+
+ok (defined $mitoshiyakusho, "Got a defined result for Mito City Hall");
+
+ok ($mitoshiyakusho->{jigyosyo_kanji} eq '水戸市役所',
+    "Got correct kanji name of Mito City Hall");
 
 # Remove the generated file.
 

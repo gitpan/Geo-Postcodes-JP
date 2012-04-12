@@ -4,7 +4,7 @@
 
 =cut
 
-package Geo::Postcodes::JP::Process;
+package [% config.base %]::Process;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -19,7 +19,7 @@ require Exporter;
 use utf8;
 
 [% INCLUDE "perl_stuff" %]
-#line 19 "Process.pm.tmpl"
+#line 23 "Process.pm.tmpl"
 
 # Lingua::JA::Moji supplies the routine to convert half-width katakana
 # into full-width katakana.
@@ -58,23 +58,18 @@ my @divisions = (
 
 # These are the fields of the postcode file, in order.
 
-my @fields = qw/number old_postcode new_postcode
-		ken_kana  city_kana  address_kana
-		ken_kanji city_kanji address_kanji
-		a b c d e f/;
+my @fields = qw/
+[%- FOR value IN ken_all_fields %]
+[% value.name %]
+[%- END %]
+/;
 
 my @jigyosyo_fields = qw/
-                            number
-                            kana
-                            kanji
-                            ken_kanji
-                            city_kanji
-                            address_kanji
-                            number
-                            new_postcode
-                            old_postcode
-                            a b c d
-                        /;
+[%- FOR value IN jigyosyo_fields %]
+[% value.name %]
+[%- END %]
+/;
+#line 73 "Process.pm.tmpl"
 
 =head2 read_ken_all
 
@@ -129,9 +124,13 @@ The values of the hash are
 
 =over
 
-=item something
+[%- FOR value IN ken_all_fields %]
 
-Generate these entries with the template toolkit.
+=item [% value.name %]
+
+[% value.description %]
+
+[%- END %]
 
 =back
 
@@ -233,6 +232,12 @@ sub find_duplicates
     return \%duplicates;
 }
 
+=head2 read_jigyosyo
+
+    my $jigyosyo_data = read_jigyosyo ('/path/to/jigyosyo/csv/file');
+
+=cut
+
 sub read_jigyosyo
 {
     my ($input_file) = @_;
@@ -265,6 +270,30 @@ sub read_jigyosyo
     return \@jigyosho_postcodes;
 }
 
+=head2 process_jigyosyo_line
+
+    my %values = process_jigyosyo_line ($line);
+
+Turn the array reference C<$line> into a hash of its values using the
+fields.
+
+The values of the hash are 
+
+=over
+
+[%- FOR value IN jigyosyo_fields %]
+
+=item [% value.name %]
+
+[% value.description %]
+
+[%- END %]
+
+=back
+
+=cut
+
+
 sub process_jigyosyo_line
 {
     my ($line) = @_;
@@ -278,17 +307,7 @@ sub process_jigyosyo_line
 
 __END__
 
-=head1 TERMINOLOGY
-
-=over
-
-=item ken
-
-=item city
-
-=item address
-
-=back
+[% INCLUDE "terminology" %]
 
 =head1 SEE ALSO
 
