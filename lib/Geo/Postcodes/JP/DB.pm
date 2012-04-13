@@ -4,6 +4,20 @@
 
 Geo::Postcodes::JP::DB - database of Japanese postal codes
 
+=head1 SYNOPSIS
+
+    my $o = Geo::Postcodes::JP::DB->new (
+        db_file => '/path/to/sqlite/database',
+    );
+    my $address = $o->lookup_postcode ('3050054');
+    print $address->{ken};
+    # Prints 茨城県
+
+=head1 DESCRIPTION
+
+This module offers access methods to an SQLite database of Japanese
+postcodes.
+
 =cut
 
 package Geo::Postcodes::JP::DB;
@@ -18,7 +32,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 #line 22 "DB.pm.tmpl"
 
@@ -33,19 +47,30 @@ qw/
   /;
 
 # Require DBI for communicating with the database.
+
 use DBI;
+
+# This is for converting the halfwidth (半角) katakana in the post
+# office file.
+
+use Lingua::JA::Moji ':all';
 
 use utf8;
-use Lingua::JA::Moji ':all';
 use Carp;
-use DBI;
 
-# Run "system". This should check for errors but doesn't yet.
-
-sub do_system
+sub insert_schema
 {
-    my ($command) = @_;
-    system ($command);
+    my ($o, $schema_file) = @_;
+    open my $input, "<", $schema_file
+    or die "Can't open schema file '$schema_file': $!";
+    my $schema = '';
+    while (<$input>) {
+        $schema .= $_;
+    }
+    my @schema = split /;/, $schema;
+    for my $statement (@schema) {
+        $o->{dbh}->do ($statement);
+    }
 }
 
 # Make the database from the specified schema file.
@@ -53,15 +78,26 @@ sub do_system
 sub make_database_from_schema
 {
     my ($db_file, $schema_file) = @_;
-    do_system ("touch $db_file");
-    do_system ("sqlite3 -batch $db_file < $schema_file"); 
+    if (-f $db_file) {
+        unlink $db_file
+            or die "Error unlinking '$db_file': $!";
+    }
+    my $o = __PACKAGE__->new (
+        db_file => $db_file,
+    );
+    $o->insert_schema ($schema_file);
+    return $o;
 }
 
 my $verbose;
 
-# Generic search for a placename by kanji and kana. This is only used
-# for the "ken" and the "jigyosyo" tables, because city and address
-# names are ambiguous.
+=head2 search_placename
+
+Generic search for a placename by kanji and kana. This is only used
+for the "ken" and the "jigyosyo" tables, because city and address
+names are ambiguous.
+
+=cut
 
 sub search_placename
 {
@@ -98,11 +134,15 @@ EOF
     return $placename_id;
 }
 
-# There are some cities with the same names in different prefectures,
-# for example there is a 府中市 (Fuchuu-shi) in Tokyo and one in
-# Hiroshima prefecture, so we need to have a "city_search" routine
-# rather than using the "search_placename" generic search for the
-# cities.
+=head2 city_search
+
+There are some cities with the same names in different prefectures,
+for example there is a 府中市 (Fuchuu-shi) in Tokyo and one in
+Hiroshima prefecture, so we need to have a "city_search" routine
+rather than using the "search_placename" generic search for the
+cities.
+
+=cut
 
 sub city_search
 {
@@ -135,7 +175,13 @@ EOF
     return $city_id;
 }
 
-# Search for an "address" in a particular city, specified by $city_id.
+=head2 address_search
+
+    $o->address_search ($kanji, $kana, $city_id);
+
+Search for an "address" in a particular city, specified by C<$city_id>.
+
+=cut
 
 sub address_search
 {
@@ -168,7 +214,9 @@ EOF
     return $address_id;
 }
 
-=head2
+=head2 search_placename_kanji
+
+    my $place_id = $o->search_placename_kanji ($type, $kanji);
 
 Like L</search_placename>, but search for a place name using only the
 kanji for the name.
@@ -208,6 +256,16 @@ sub search_placename_kanji
     return $placename_id;
 }
 
+=head2 insert_postcode
+
+    $o->insert_postcode ($postcode, $address_id);
+
+Insert a postcode C<$postcode> into the table of postcodes with
+corresponding address C<$address_id>.
+
+=cut
+
+
 # Insert a postcode with an address.
 
 sub insert_postcode
@@ -227,7 +285,14 @@ EOF
     $o->{postcode_insert_sth}->execute ($postcode, $address_id);
 }
 
-# Insert a postcode for a jigyosyo into the table.
+=head2 jigyosyo_insert_postcode
+
+    $o->jigyosyo_insert_postcode ($postcode, $address_id, $jigyosyo_id);
+
+Insert a postcode for a "jigyosyo" identified by C<$jigyosyo_id> into
+the table.
+
+=cut
 
 sub jigyosyo_insert_postcode
 {
@@ -257,6 +322,15 @@ my $jigyosyo_insert_sql = <<'EOF';
 insert into jigyosyo (kanji, kana) values (?, ?)
 EOF
 
+=head2 jigyosyo_insert
+
+    my $jigyosyo_id = $o->jigyosyo_insert ($kanji, $kana);
+
+Insert a "jigyosyo" into the table of them with kanji C<$kanji> and
+kana C<$kana>, return the ID number of the entry.
+
+=cut
+
 sub jigyosyo_insert
 {
     my ($o, $kanji, $kana) = @_;
@@ -278,6 +352,12 @@ my $ken_insert_sql = <<'EOF';
 insert into ken (kanji, kana) values (?, ?)
 EOF
 
+=head2 ken_insert
+
+    my $ken_id = $o->ken_insert ($kanji, $kana);
+
+=cut
+
 sub ken_insert
 {
     my ($o, $kanji, $kana) = @_;
@@ -294,6 +374,14 @@ sub ken_insert
 
 # City
 
+=head2 city_insert
+
+    my $city_id = $o->city_insert ($kanji, $kana, $ken_id);
+
+C<$Ken_id> specifies the "ken" to which the city belongs.
+
+=cut
+
 sub city_insert
 {
     my ($o, $kanji, $kana, $ken_id) = @_;
@@ -309,6 +397,12 @@ EOF
 }
 
 # Address
+
+=head2 address_insert
+
+    my $address_id = $o->address_insert ($kanji, $kana, $city_id);
+
+=cut
 
 sub address_insert
 {
@@ -327,6 +421,8 @@ EOF
 =head2 db_connect
 
     $o->db_connect ('/path/to/database/file');
+
+Connect to the database specified.
 
 =cut
 
@@ -424,7 +520,7 @@ sub create_database
     if ($verbose) {
         print "Making database from schema.\n";
     }
-    make_database_from_schema ($db_file, $schema_file);
+    return make_database_from_schema ($db_file, $schema_file);
 }
 
 =head2 insert_postcode_file
@@ -470,8 +566,7 @@ by C<schema_file> from the data in C<postcode_file>.
 sub make_database
 {
     my (%inputs) = @_;
-    create_database (%inputs);
-    my $o = __PACKAGE__->new (%inputs);
+    my $o = create_database (%inputs);
     $o->insert_postcode_file (%inputs);
     return $o;
 }
@@ -672,15 +767,6 @@ sub lookup_postcode
     # with no meaning to the user.
     delete $values{jigyosyo_id};
     return \%values;
-}
-
-=head2 test_database
-
-=cut
-
-sub test_database
-{
-    my ($o, %inputs) = @_;
 }
 
 sub new

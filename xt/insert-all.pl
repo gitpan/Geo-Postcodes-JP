@@ -7,7 +7,7 @@ use lib "$FindBin::Bin/../lib";
 }
 use Geo::Postcodes::JP::DB qw/make_database test_database/;
 
-my $postcode_file = '/home/ben/projects/postcodes/data/KEN_ALL.CSV';
+my $postcode_file = "$FindBin::Bin/KEN_ALL.CSV";
 my $db_file = '/home/ben/projects/Geo-Postcodes-JP/xt/ken_all.db';
 my $schema_file = '/home/ben/projects/Geo-Postcodes-JP/db/schema.sql';
 

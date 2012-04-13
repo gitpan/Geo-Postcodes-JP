@@ -1,4 +1,4 @@
-version = 0.002
+version = 0.003
 base = Geo::Postcodes::JP
 author = Ben Bullock
 author_pause = BKB

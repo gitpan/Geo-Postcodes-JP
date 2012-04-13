@@ -1,3 +1,5 @@
+=encoding utf8
+
 =head1 NAME
 
 Geo::Postcodes::JP::Process - process Japan Post Office postcode data
@@ -20,7 +22,7 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 #line 23 "Process.pm.tmpl"
 
@@ -71,12 +73,13 @@ address_kana
 ken_kanji
 city_kanji
 address_kanji
-a
-b
-c
-d
-e
-f
+one-region-multiple-postcodes
+numbering-start
+has-choume
+one-postcode-multiple-regions
+koushin-no-hyouji
+henkou-riyuu
+
 /;
 
 my @jigyosyo_fields = qw/
@@ -153,7 +156,7 @@ The values of the hash are
 
 =item number
 
-The JIS code number for the region.
+The JIS code number for the region. The JIS standards for regions ofJapan are numbered JIS X 0401 (1973) for the prefecture identificationcodes, and JIS X0402 (2003) identification codes for cities, towns andvillages.
 
 
 =item old_postcode
@@ -196,34 +199,39 @@ The kanji version of the city.
 The kanji version of the address.
 
 
-=item a
+=item one-region-multiple-postcodes
 
-Unknown.
-
-
-=item b
-
-Unknown.
+This is 1 if the same address has more than one postcode, zerootherwise.
 
 
-=item c
+=item numbering-start
 
-Unknown.
-
-
-=item d
-
-Unknown.
+Indicates if numbering starts, 1 if so.
 
 
-=item e
+=item has-choume
 
-Unknown.
+Indicates there is a division into "choume".
 
 
-=item f
+=item one-postcode-multiple-regions
 
-Unknown.
+This is 1 if the same postcode covers more than one region, zerootherwise.
+
+
+=item koushin-no-hyouji
+
+0 = no change, 1 = change, 2 = delete
+
+
+=item henkou-riyuu
+
+Reason for change.
+
+
+=item 
+
+
 
 
 =back
@@ -498,7 +506,7 @@ subdivisions.
 =item address
 
 In this module, "address" is the term used to point to the third field
-in the postcode data file. 
+in the postcode data file. This is called 町域 (chouiki) by the Post Office.
 
 =item jigyosyo
 

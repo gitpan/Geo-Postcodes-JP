@@ -7,12 +7,11 @@ use Test::More tests => 12;
 BEGIN { use_ok ('Geo::Postcodes::JP::DB') };
 use Geo::Postcodes::JP::DB qw/create_database/;
 use FindBin;
-use File::Spec;
 use utf8;
 
 # The directory with the schema in it, "../db".
 
-my $db_dir = File::Spec->catdir ($FindBin::Bin, File::Spec->updir (), "db");
+my $db_dir = "$FindBin::Bin/../db";
 
 # The file name (including the directory) of the schema file.
 
@@ -25,7 +24,7 @@ ok (-f $schema_file, "The schema file exists where it is supposed to.");
 # A test database, in the current directory, which we will create
 # using the schema.
 
-my $test_db = File::Spec->catpath (undef, $FindBin::Bin, "test.db");
+my $test_db = "$FindBin::Bin/test.db";
 
 # Delete a test database from a previous test, for example if the test
 # script failed before cleaning (removing this file).
@@ -54,21 +53,17 @@ ok (-f $test_db, "The database file was created.");
 
 rm_db ();
 
-my $test_pc_file = File::Spec->catpath (undef, $FindBin::Bin, "KEN_SOME.CSV");
+my $test_pc_file = "$FindBin::Bin/KEN_SOME.CSV";
 
 my $o;
 
-eval {
-    $o = Geo::Postcodes::JP::DB::make_database (
-        db_file => $test_db,
-        schema_file => $schema_file,
-        postcode_file => $test_pc_file,
-    );
-};
+$o = Geo::Postcodes::JP::DB::make_database (
+    db_file => $test_db,
+    schema_file => $schema_file,
+    postcode_file => $test_pc_file,
+);
 
-# Test whether an error occurred in creating the database.
-
-ok (! $@, "Make_database did not die.");
+ok ($o, "make database returned something");
 
 # Test whether the database file exists.
 
