@@ -15,8 +15,10 @@
 
 =head1 DESCRIPTION
 
-This module offers access methods to an SQLite database of Japanese
-postcodes.
+This module offers methods to create and access an SQLite database of
+Japanese postcodes.
+
+=head1 METHODS
 
 =cut
 
@@ -90,6 +92,8 @@ my $verbose;
 
 =head2 search_placename
 
+    $placename_id = $o->search_placename ($kanji, $kana);
+
 Generic search for a placename by kanji and kana. This is only used
 for the "ken" and the "jigyosyo" tables, because city and address
 names are ambiguous.
@@ -133,6 +137,8 @@ EOF
 
 =head2 city_search
 
+    $city_id = $o->city_search ($kanji, $ken_id);
+
 There are some cities with the same names in different prefectures,
 for example there is a 府中市 (Fuchuu-shi) in Tokyo and one in
 Hiroshima prefecture, so we need to have a "city_search" routine
@@ -174,7 +180,7 @@ EOF
 
 =head2 address_search
 
-    $o->address_search ($kanji, $kana, $city_id);
+    $address_id = $o->address_search ($kanji, $kana, $city_id);
 
 Search for an "address" in a particular city, specified by C<$city_id>.
 
@@ -258,7 +264,9 @@ sub search_placename_kanji
     $o->insert_postcode ($postcode, $address_id);
 
 Insert a postcode C<$postcode> into the table of postcodes with
-corresponding address C<$address_id>.
+corresponding address C<$address_id>. This is for addresses which are
+not jigyosyo (places of business). Addresses for places of business
+should use L</jigyosyo_insert_postcode>.
 
 =cut
 
@@ -287,7 +295,7 @@ EOF
     $o->jigyosyo_insert_postcode ($postcode, $address_id, $jigyosyo_id);
 
 Insert a postcode for a "jigyosyo" identified by C<$jigyosyo_id> into
-the table.
+the table. $Jigyosyo_id is usually got from L</jigyosyo_insert>.
 
 =cut
 
@@ -354,6 +362,9 @@ EOF
 
     my $ken_id = $o->ken_insert ($kanji, $kana);
 
+Insert a prefecture into the table of prefectures with the name
+C<$kanji> in kanji and C<$kana> in kana. [% internal %]
+
 =cut
 
 sub ken_insert
@@ -375,6 +386,9 @@ sub ken_insert
 =head2 city_insert
 
     my $city_id = $o->city_insert ($kanji, $kana, $ken_id);
+
+Insert a city into the table of cities with kanji name C<$kanji>, kana
+name C<$kana>, which is in the prefecture specified by C<$ken_id>.
 
 C<$Ken_id> specifies the "ken" to which the city belongs.
 
@@ -399,6 +413,11 @@ EOF
 =head2 address_insert
 
     my $address_id = $o->address_insert ($kanji, $kana, $city_id);
+
+Insert an address into the table of addresses with kanji name
+C<$kanji>, kana name C<$kana>, and city ID C<$city_id>. This is an
+internal routine used in the construction of the database from the
+data file.
 
 =cut
 
@@ -572,9 +591,9 @@ sub make_database
 =head2 lookup_address
 
     my $address_id = lookup_address ($o,
-        ken => '北海道',
-        city => '',
-        address => '',
+        ken => '沖縄県'
+        city => '宜野湾市',
+        address => '上原',
     );
 
 Look up an address id number from the kanji version of the ken name,
@@ -708,24 +727,22 @@ sub jigyosyo_lookup
 
 =head2 lookup_postcode
 
-    my $address = lookup_postcode ('3108610');
+    my $address = $o->lookup_postcode ('3108610');
     print $address->{ken}->{kanji}, "\n";
     # Prints 茨城県
 
-Given a postcode, get the corresponding address details.
+[% INCLUDE "lookup-postcode" %]
+
 
 =cut
 
 my @fields = qw/
-                   postcode
-                   ken_kanji
-                   ken_kana
-                   city_kanji
-                   city_kana
-                   address_kanji
-                   address_kana
-                   jigyosyo_id
+[%- FOR field IN address_fields %]
+                [% field.name %]
+[%- END -%]
+jigyosyo_id
                /;
+#line 734 "DB.pm.tmpl"
 
 my $sql_fields = join ",", @fields;
 $sql_fields =~ s/_(kanji|kana)/\.$1/g;

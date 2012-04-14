@@ -7,7 +7,9 @@ WriteMakefile (
     AUTHOR => '[% config.author %] <[% config.email %]>',
     LICENSE => '[% config.license %]',
     PREREQ_PM => {
-        'Lingua::JA::Moji' => 0,
+        # The ":all" is not defined in old versions so need recent
+        # one.
+        'Lingua::JA::Moji' => '0.11',
         'DBI' => 0,
         'DBD::SQLite' => 0,
         'LWP::UserAgent' => 0,

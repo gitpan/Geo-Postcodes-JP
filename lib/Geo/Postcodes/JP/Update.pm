@@ -11,7 +11,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 
 use LWP::UserAgent;

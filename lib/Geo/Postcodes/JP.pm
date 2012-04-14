@@ -2,7 +2,7 @@ package Geo::Postcodes::JP;
 
 use warnings;
 use strict;
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 
 use Geo::Postcodes::JP::DB;
@@ -36,16 +36,92 @@ Geo::Postcodes::JP - handle the Japan Post Office postal code data
     my $gpj = Geo::Postcodes::JP->new (
         db_file => '/path/to/database/file',
     );
-    my $address = $gpj->postcode_to_address ();
-    # Now $address contains the address as a hash reference
+    my $address = $gpj->postcode_to_address ('3050053');
+    # Now $address contains the address as a hash reference.
 
 =head1 DESCRIPTION
+
+This package contains modules for reading the file of postcodes
+supplied by Japan Post and inserting the postcodes into an SQLite
+database. The main module provides a way to access the postcodes.
+
+=head2 Building the database
 
 To use this, you need to have built the database already.
 
 The scripts to build the database are in the F<xt> directory of the
 distribution. You need to edit these scripts to point to the files you
 want to use.
+
+=head1 METHODS
+
+=head2 new
+
+    my $gpj = Geo::Postcodes::JP->new (
+
+=head2 postcode_to_address
+
+    my $address = $gpj->postcode_to_address ('9012204');
+
+Given a postcode, get the corresponding address details. The return
+value is a hash reference with the following keys.
+
+=over
+
+=item postcode
+
+
+
+=item ken_kanji
+
+
+
+=item ken_kana
+
+
+
+=item city_kanji
+
+
+
+=item city_kana
+
+
+
+=item address_kanji
+
+
+
+=item address_kana
+
+
+
+=item 
+
+
+
+=back
+
+If the postcode is a jigyosyo postcode, the result also contains
+
+=over
+
+=item jigyosyo_kanji
+
+The kanji name of the place of business.
+
+=item jigyosyo_kana
+
+The kana name of the place of business. This, unfortunately, is with
+small versions of kana all converted into large ones, because this is
+the format supplied by the post office.
+
+=item street_number
+
+This is the specific address of the place of business.
+
+=back
+
 
 =head1 AUTHOR
 

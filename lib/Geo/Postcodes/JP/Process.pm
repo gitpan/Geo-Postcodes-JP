@@ -22,7 +22,7 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 #line 23 "Process.pm.tmpl"
 
@@ -236,6 +236,8 @@ Reason for change.
 
 =back
 
+See also the L<Japan Post explanation of the KEN_ALL.CSV file|http://www.post.japanpost.jp/zipcode/dl/readme.html> in Japanese.
+
 =cut
 
 sub process_line
@@ -344,16 +346,6 @@ sub read_jigyosyo
 {
     my ($input_file) = @_;
 
-    # The following are descriptions of the jigyosyo data
-    # fields. Where these correspond to the fields in the usual
-    # postcode file (city_kanji etc.) the names used below are the
-    # same names as used in the usual postcode file. There are four
-    # fields at the end consisting of a name in kanji like 札幌 and
-    # three numbers, which I don't know the function of. There is no
-    # documentation of what these numbers are at
-    # http://www.post.japanpost.jp/zipcode/dl/jigyosyo/index.html
-    # so I have just used "a, b, c, d" to label them.
-
     my @jigyosho_postcodes;
 #    my $input_file = 'jigyosyo.csv';
     open my $input, "<:encoding(shift-jis)", $input_file or die $!;
@@ -456,7 +448,7 @@ The post office which handles mail for this postcode.
 
 =back
 
-See also the L<Japan Post Readme for the Jigyosyo file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html>.
+See also the L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html> in Japanese.
 
 =cut
 

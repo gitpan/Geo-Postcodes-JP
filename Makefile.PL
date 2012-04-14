@@ -2,12 +2,14 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile (
     NAME => 'Geo::Postcodes::JP',
-    VERSION => '0.004',
+    VERSION => '0.005',
     ABSTRACT => 'handle the Japan Post Office postal code data',
     AUTHOR => 'Ben Bullock <bkb@cpan.org>',
     LICENSE => 'perl',
     PREREQ_PM => {
-        'Lingua::JA::Moji' => 0,
+        # The ":all" is not defined in old versions so need recent
+        # one.
+        'Lingua::JA::Moji' => '0.11',
         'DBI' => 0,
         'DBD::SQLite' => 0,
         'LWP::UserAgent' => 0,

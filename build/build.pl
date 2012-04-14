@@ -54,6 +54,7 @@ my $tt = Template->new (
 
 $vars{ken_all_fields} = get_ken_all_fields ("$FindBin::Bin/ken-all-fields.txt");
 $vars{jigyosyo_fields} = get_ken_all_fields ("$FindBin::Bin/jigyosyo-fields.txt");
+$vars{address_fields} = get_ken_all_fields ("$FindBin::Bin/address-fields.txt");
 
 # Process the Perl module template files.
 

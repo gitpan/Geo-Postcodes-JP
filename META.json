@@ -36,7 +36,7 @@
             "DBD::SQLite" : "0",
             "DBI" : "0",
             "LWP::UserAgent" : "0",
-            "Lingua::JA::Moji" : "0"
+            "Lingua::JA::Moji" : "0.11"
          }
       }
    },
@@ -50,5 +50,5 @@
          "url" : "https://github.com/benkasminbullock/Geo-Postcodes-JP"
       }
    },
-   "version" : "0.004"
+   "version" : "0.005"
 }
