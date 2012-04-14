@@ -22,7 +22,7 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 #line 23 "Process.pm.tmpl"
 
@@ -92,10 +92,10 @@ address_kanji
 street_number
 new_postcode
 old_postcode
-a
-b
-c
-d
+post-office
+type
+multiple-postcode
+Alteration code
 
 /;
 #line 73 "Process.pm.tmpl"
@@ -429,24 +429,24 @@ As for the "ken_all" fields.
 As for the "ken_all" fields.
 
 
-=item a
+=item post-office
 
-Unknown.
-
-
-=item b
-
-Unknown.
+The post office which handles mail for this postcode.
 
 
-=item c
+=item type
 
-Unknown.
+0=Large company1=Private
 
 
-=item d
+=item multiple-postcode
 
-Unknown.
+0=Not multiple, also 1,2,3.
+
+
+=item Alteration code
+
+0=No change1=New addition2=Deleted
 
 
 =item 
@@ -455,6 +455,8 @@ Unknown.
 
 
 =back
+
+See also the L<Japan Post Readme for the Jigyosyo file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html>.
 
 =cut
 

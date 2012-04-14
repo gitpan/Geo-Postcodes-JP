@@ -32,7 +32,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 #line 22 "DB.pm.tmpl"
 
@@ -319,28 +319,29 @@ EOF
 # Format for the SQL to insert kanji, kana into the place name table.
 
 my $jigyosyo_insert_sql = <<'EOF';
-insert into jigyosyo (kanji, kana) values (?, ?)
+insert into jigyosyo (kanji, kana, street_number) values (?, ?, ?)
 EOF
 
 =head2 jigyosyo_insert
 
-    my $jigyosyo_id = $o->jigyosyo_insert ($kanji, $kana);
+    my $jigyosyo_id = $o->jigyosyo_insert ($kanji, $kana, $street_number);
 
-Insert a "jigyosyo" into the table of them with kanji C<$kanji> and
-kana C<$kana>, return the ID number of the entry.
+Insert a "jigyosyo" into the table of them with kanji C<$kanji>, kana
+C<$kana>, street number C<$street_number>, and return the ID number of
+the entry.
 
 =cut
 
 sub jigyosyo_insert
 {
-    my ($o, $kanji, $kana) = @_;
+    my ($o, $kanji, $kana, $street_number) = @_;
     if ($verbose) {
-        print "Inserting jigyosyo $kanji/$kana\n";
+        print "Inserting jigyosyo $kanji/$kana/$street_number.\n";
     }
     if (! $o->{jigyosyo_insert_sth}) {
         $o->{jigyosyo_insert_sth} = $o->{dbh}->prepare ($jigyosyo_insert_sql);
     }
-    $o->{jigyosyo_insert_sth}->execute ($kanji, $kana);
+    $o->{jigyosyo_insert_sth}->execute ($kanji, $kana, $street_number);
     my $id = $o->{dbh}->last_insert_id (0, 0, 0, 0);
     return $id;
 }
@@ -659,7 +660,8 @@ sub add_jigyosyo
             $address_id = address_insert ($o, $address, '?', $city_id);
             $total{notfound}++;
         }
-        my $jigyosyo_id = jigyosyo_insert ($o, $values{kanji}, $values{kana});
+        my $jigyosyo_id = jigyosyo_insert ($o, $values{kanji}, $values{kana},
+                                           $values{street_number});
 #        next;
         if ($address_id == 1) {
             die "BAd aadredd ss id \n";
@@ -682,7 +684,7 @@ hash reference.
 =cut
 
 my $jigyosyo_lookup_sql = <<EOF;
-select kanji, kana from jigyosyo
+select kanji, kana, street_number from jigyosyo
 where
 id = ?
 EOF
@@ -702,7 +704,7 @@ sub jigyosyo_lookup
     if (@$r > 1) {
         die "Non-unique jigyosyo id number $jigyosyo_id";
     }
-    @jigyosyo{qw/kanji kana/} = @{$r->[0]};
+    @jigyosyo{qw/kanji kana street_number/} = @{$r->[0]};
     return \%jigyosyo;
 }
 
@@ -761,6 +763,7 @@ sub lookup_postcode
         if ($jigyosyo_values) {
             $values{jigyosyo_kanji} = $jigyosyo_values->{kanji};
             $values{jigyosyo_kana} = $jigyosyo_values->{kana};
+            $values{street_number} = $jigyosyo_values->{street_number};
         }
     }
     # Don't leave this in the result, since it is just a database ID

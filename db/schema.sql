@@ -11,7 +11,8 @@ create index postcode_idx on postcodes (address_id, jigyosyo_id);
 create table jigyosyo (
        id integer primary key,
        kanji text,
-       kana text
+       kana text,
+       street_number text
 );
 
 create index jigyosyo_idx on jigyosyo (kanji, kana);

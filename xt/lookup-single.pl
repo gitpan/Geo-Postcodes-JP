@@ -13,8 +13,17 @@ my $gpj = Geo::Postcodes::JP->new (
     db_file => $db_file,
 );
 binmode STDOUT, ":encoding(utf8)";
+if (@ARGV) {
+    for my $postcode (@ARGV) {
+$postcode =~ s/\D//g;
+run ($postcode);
+}
+}
+else {
 run ('3050054');
 run ('3108610');
+run ('9071892');
+}
 
 sub run
 {

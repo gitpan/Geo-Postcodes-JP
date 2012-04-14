@@ -21,9 +21,10 @@ no_index:
 requires:
   DBD::SQLite: 0
   DBI: 0
+  LWP::UserAgent: 0
   Lingua::JA::Moji: 0
 resources:
   bugtracker: https://github.com/benkasminbullock/Geo-Postcodes-JP/issues
   homepage: http://prepan.org/module/3Yz7PYrBQM
   repository: https://github.com/benkasminbullock/Geo-Postcodes-JP
-version: 0.003
+version: 0.004

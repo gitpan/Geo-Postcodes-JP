@@ -11,7 +11,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 
 use LWP::UserAgent;
@@ -24,6 +24,10 @@ my $jigyosyo_url =
 
 
 =head2 update_files
+
+Update the files from the website. This is not finished yet although
+it works a bit (you need to edit the code itself to make it work
+correctly).
 
 =cut
 
