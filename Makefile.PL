@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile (
     NAME => 'Geo::Postcodes::JP',
-    VERSION => '0.006',
+    VERSION => '0.007',
     ABSTRACT => 'handle the Japan Post Office postal code data',
     AUTHOR => 'Ben Bullock <bkb@cpan.org>',
     LICENSE => 'perl',

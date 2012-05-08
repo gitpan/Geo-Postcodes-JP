@@ -155,9 +155,19 @@ sub process_line
 
 =head2 concatenate_multi_line
 
-    $postcodes = concatenate_multi_line ($postcodes);
+    $postcodes = concatenate_multi_line ($postcodes, $duplicates);
 
-Concatenate single entries which are spread on multiple lines.
+Concatenate a single entry which is spread on multiple
+lines. C<$Duplicates> is the return value of L<find_duplicates>.
+
+If you are wondering what "concatenate a single entry which is spread
+on multiple lines" means, some of the entries in the CSV file are
+actually single entries but broken into two or more lines if the
+number of characters in one of the fields exceeds a maximum. This
+routine attempts to put this broken data back together again.
+
+At the moment there is no comprehensive check of correctness of the
+result.
 
 =cut
 
@@ -262,11 +272,11 @@ sub concatenate_multi_line
 
 =head2 find_duplicates
 
-    my $duplicates = find_duplicates ();
+    my $duplicates = find_duplicates ($postcodes);
 
 Make a hash whose keys are postcodes which have duplicate references,
 and whose values are array references to arrays of offsets in the
-postcode file.
+postcode file. The return value is the hash reference.
 
 =cut
 
@@ -339,11 +349,13 @@ The values of the hash are
 
 =back
 
-See also the L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html> in Japanese.
+See also the
+L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html>
+in Japanese.
 
 =cut
 
-#line 345 "Process.pm.tmpl"
+#line
 
 sub process_jigyosyo_line
 {
@@ -375,10 +387,6 @@ sub improve_postcodes
 __END__
 
 [% INCLUDE "terminology" %]
-
-=head1 SEE ALSO
-
-L<Number::ZipCode::JP> - validate Japanese zip-codes.
 
 [% INCLUDE "author" %]
 

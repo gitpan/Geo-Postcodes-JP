@@ -36,7 +36,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 #line 39 "DB.pm.tmpl"
 
@@ -401,7 +401,7 @@ sub ken_insert
 Insert a city into the table of cities with kanji name C<$kanji>, kana
 name C<$kana>, which is in the prefecture specified by C<$ken_id>.
 
-C<$Ken_id> specifies the "ken" to which the city belongs.
+C<$Ken_id> specifies the prefecture to which the city belongs.
 
 =cut
 
@@ -518,39 +518,6 @@ sub insert_postcodes
     $o->{dbh}->{AutoCommit} = 1;
 }
 
-=head2 create_database
-
-    create_database (
-        db_file => '/path/to/file',
-        schema_file => '/path/to/schema/file',
-    );
-
-Create the SQLite database specified by C<db_file> using the schema
-specified by C<schema_file>.
-
-=cut
-
-sub create_database
-{
-    my (%inputs) = @_;
-    my $db_file = $inputs{db_file};
-    my $schema_file = $inputs{schema_file};
-    my $verbose = $inputs{verbose};
-    if (! $db_file) {
-        croak "Specify the database file";
-    }
-    if (! $schema_file) {
-        croak "Specify the schema file with schema_file => 'file name'";
-    }
-    if (-f $db_file) {
-        croak "Database file '$db_file' already exists: not recreating.";
-    }
-    if ($verbose) {
-        print "Making database from schema.\n";
-    }
-    return make_database_from_schema ($db_file, $schema_file);
-}
-
 =head2 insert_postcode_file
 
     insert_postcode_file (
@@ -560,6 +527,10 @@ sub create_database
 
 Insert the postcodes in the file specified by C<postcode_file> into
 the database specified by C<db_file>.
+
+This uses the L<read_ken_all|Geo::Postcodes::JP::Process#read_ken_all> method of L<Geo::Postcodes::JP::Process> to
+read the data, and the L<improve_postcodes|Geo::Postcodes::JP::Process#improve_postcodes> function of the same module to improve
+the data.
 
 =cut
 
@@ -579,39 +550,16 @@ sub insert_postcode_file
     $o->insert_postcodes ($postcodes);
 }
 
-=head2 make_database
-
-    my $o = make_database (
-        db_file => '/path/to/database/file',
-        schema_file => '/path/to/schema/file',
-        postcode_file => '/path/to/postcode/file',
-    );
-
-Make the database specified by C<db_file> using the schema specified
-by C<schema_file> from the data in C<postcode_file>. The schema is
-supplied in the F<db> subdirectory of the distribution in the file
-F<db/schema.sql>.
-
-=cut
-
-sub make_database
-{
-    my (%inputs) = @_;
-    my $o = create_database (%inputs);
-    $o->insert_postcode_file (%inputs);
-    return $o;
-}
-
 =head2 lookup_address
 
     my $address_id = lookup_address ($o,
-        ken => '沖縄県'
+        ken => '沖縄県',
         city => '宜野湾市',
         address => '上原',
     );
 
-Look up an address id number from the kanji version of the ken name,
-the city name, and the address name.
+Look up an address id number from the kanji versions of the prefecture
+name, the city name, and the address name.
 
 =cut
 
@@ -708,8 +656,8 @@ sub add_jigyosyo
 
     my $jigyosyo = lookup_jigyosyo ($jigyosyo_id);
 
-Given a jigyosyo id number, return its kanji and kana names in a hash
-reference.
+Given a jigyosyo id number, return its kanji and kana names and its
+street number in a hash reference.
 
 =cut
 
@@ -745,8 +693,10 @@ sub jigyosyo_lookup
     print $address->[0]->{ken}->{kanji}, "\n";
     # Prints 茨城県
 
-Given a postcode, get the corresponding address details. The return
-value is a hash reference with the following keys.
+Given a postcode, get the corresponding address details. If the
+postcode is found, the return value is an array reference containing
+one or more hash references with the following keys. If the postcode
+is not found, the return value is the undefined value.
 
 =over
 
@@ -827,7 +777,7 @@ my @fields = qw/
                 address_kana
                 jigyosyo_id
                /;
-#line 756 "DB.pm.tmpl"
+#line 706 "DB.pm.tmpl"
 
 my $sql_fields = join ",", @fields;
 $sql_fields =~ s/_(kanji|kana)/\.$1/g;
@@ -875,6 +825,18 @@ sub lookup_postcode
     return \@addresses;
 }
 
+=head2 new
+
+    my $o = Geo::Postcodes::JP::DB->new (
+        db_file => '/path/to/the/sqlite/database/file',
+    );
+
+Create a new database-handling object. See also L</create_database> to
+create a database file without data, and L</make_database> to create
+the database file and insert its data.
+
+=cut
+
 sub new
 {
     my ($package, %inputs) = @_;
@@ -883,6 +845,69 @@ sub new
     if ($db_file) {
         $o->db_connect ($db_file);
     }
+    return $o;
+}
+
+=head1 FUNCTIONS
+
+=head2 create_database
+
+    my $o = create_database (
+        db_file => '/path/to/file',
+        schema_file => '/path/to/schema/file',
+    );
+
+Create the SQLite database specified by C<db_file> using the schema
+specified by C<schema_file>.
+
+The return value is a database handling object as returned by L</new>.
+
+=cut
+
+sub create_database
+{
+    my (%inputs) = @_;
+    my $db_file = $inputs{db_file};
+    my $schema_file = $inputs{schema_file};
+    my $verbose = $inputs{verbose};
+    if (! $db_file) {
+        croak "Specify the database file";
+    }
+    if (! $schema_file) {
+        croak "Specify the schema file with schema_file => 'file name'";
+    }
+    if (-f $db_file) {
+        croak "Database file '$db_file' already exists: not recreating.";
+    }
+    if ($verbose) {
+        print "Making database from schema.\n";
+    }
+    return make_database_from_schema ($db_file, $schema_file);
+}
+
+=head2 make_database
+
+    my $o = make_database (
+        db_file => '/path/to/database/file',
+        schema_file => '/path/to/schema/file',
+        postcode_file => '/path/to/postcode/file',
+    );
+
+Make the database specified by C<db_file> using the schema specified
+by C<schema_file> from the data in C<postcode_file>. The schema is
+supplied in the F<db> subdirectory of the distribution in the file
+F<db/schema.sql>. This uses L</create_database> to create the database
+and L</insert_postcode_file> to insert the data into the database.
+
+The return value is the database handling object, as returned by L</new>.
+
+=cut
+
+sub make_database
+{
+    my (%inputs) = @_;
+    my $o = create_database (%inputs);
+    $o->insert_postcode_file (%inputs);
     return $o;
 }
 

@@ -13,7 +13,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 #line 16 "Update.pm.tmpl"
 

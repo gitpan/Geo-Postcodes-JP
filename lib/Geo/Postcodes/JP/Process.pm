@@ -23,7 +23,7 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.006';
+our $VERSION = '0.007';
 
 #line 26 "Process.pm.tmpl"
 
@@ -275,9 +275,19 @@ sub process_line
 
 =head2 concatenate_multi_line
 
-    $postcodes = concatenate_multi_line ($postcodes);
+    $postcodes = concatenate_multi_line ($postcodes, $duplicates);
 
-Concatenate single entries which are spread on multiple lines.
+Concatenate a single entry which is spread on multiple
+lines. C<$Duplicates> is the return value of L<find_duplicates>.
+
+If you are wondering what "concatenate a single entry which is spread
+on multiple lines" means, some of the entries in the CSV file are
+actually single entries but broken into two or more lines if the
+number of characters in one of the fields exceeds a maximum. This
+routine attempts to put this broken data back together again.
+
+At the moment there is no comprehensive check of correctness of the
+result.
 
 =cut
 
@@ -382,11 +392,11 @@ sub concatenate_multi_line
 
 =head2 find_duplicates
 
-    my $duplicates = find_duplicates ();
+    my $duplicates = find_duplicates ($postcodes);
 
 Make a hash whose keys are postcodes which have duplicate references,
 and whose values are array references to arrays of offsets in the
-postcode file.
+postcode file. The return value is the hash reference.
 
 =cut
 
@@ -538,11 +548,13 @@ The post office which handles mail for this postcode.
 
 =back
 
-See also the L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html> in Japanese.
+See also the
+L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.japanpost.jp/zipcode/dl/jigyosyo/readme.html>
+in Japanese.
 
 =cut
 
-#line 347 "Process.pm.tmpl"
+#line 359 "Process.pm.tmpl"
 
 sub process_jigyosyo_line
 {
@@ -577,56 +589,71 @@ __END__
 
 =over
 
-=item postcode
+=item Postcode
 
 In this module, "postcode" is the translation used for the Japanese
 term "yuubin bangou" (郵便番号). They might be called "postal codes"
 or even "zip codes" by some. 
 
-This module only deals with the seven-digit modern postcodes. It does
-not deal with the old three and five digit postcodes, these are not
-parsed from the file.
+This module only deals with the seven-digit modern postcodes
+introduced in 1998. It does not handle the three and five digit
+postcodes which were used until 1998.
 
-=item ken
+=item Ken
 
-"Ken" means the Japanese system of prefectures, which includes the
-"ken" divisions as well as the "do/fu/to" divisions, with "do" used
-for Hokkaido, "fu" for Osaka and Kyoto, and "to" for the Tokyo
-metropolis. These are got from the module using the word "ken".
+In this module, "ken" in a variable name means the Japanese system of
+prefectures, which includes the "ken" divisions as well as the
+"do/fu/to" divisions, with "do" used for Hokkaido, "fu" for Osaka and
+Kyoto, and "to" for the Tokyo metropolis. These are got from the
+module using the word "ken".
 
 See also L<the sci.lang.japan FAQ on Japanese addresses|http://www.sljfaq.org/afaq/addresses.html>.
 
-=item city
+=item City
 
 In this module, "city" is the term used to point to the second field
 in the postcode data file. Some of these are actually cities, like
 "Mito-shi" (水戸市), the city of Mito in Ibaraki prefecture. However,
 some of them are not really cities but other geographical
-subdivisions.
+subdivisions, such as gun/machi or shi/ku combinations.
 
 =item address
 
 In this module, "address" is the term used to point to the third field
-in the postcode data file. This is called 町域 (chouiki) by the Post Office.
-
-=item jigyosyo
-
-In this module, "jigyosyo" is the term used to point to places of
-business. Some places of business have their own postcodes,
-
-=back
+in the postcode data file. This is called 町域 (chouiki) by the Post
+Office.
 
 For example, in the following data file entry, "3100004" is the
 postcode, "茨城県" (Ibaraki-ken) is the "ken", "水戸市" (Mito-shi) is
 the "city", and "青柳町" (Aoyagicho) is the "address".
 
-08201,"310  ","3100004","ｲﾊﾞﾗｷｹﾝ","ﾐﾄｼ","ｱｵﾔｷﾞﾁｮｳ","茨城県","水戸市","青柳町",0,0,0,0,0,0
+    08201,"310  ","3100004","ｲﾊﾞﾗｷｹﾝ","ﾐﾄｼ","ｱｵﾔｷﾞﾁｮｳ","茨城県","水戸市","青柳町",0,0,0,0,0,0
+
+=item Jigyosyo
+
+In this module, "jigyosyo" is the term used to point to places of
+business. Some places of business have their own postcodes. 
+
+The term "jigyosyo" is used because it is the post office's own
+romanization, but this is actually an error and should be either
+I<jigyōsho> or I<zigyôsyo> in standard romanizations of Japanese, or
+I<jigyosho> in simplified Hepburn. See L<the Sci.Lang.Japan FAQ page
+on Japanese romanization|http://www.sljfaq.org/afaq/kana-roman.html>.
+
+=item Street number
+
+In this module "street number" is an arbitrary way of describing the
+final part of the address, which may actually specify a variety of
+things, such as the ban-chi, or even what floor of a building the
+postcode refers to.
+
+The street number field is mostly relevant for the jigyosyo postcodes,
+but also crops up in some of the addresses, especially for rural
+areas.
+
+=back
 
 
-
-=head1 SEE ALSO
-
-L<Number::ZipCode::JP> - validate Japanese zip-codes.
 
 =head1 AUTHOR
 

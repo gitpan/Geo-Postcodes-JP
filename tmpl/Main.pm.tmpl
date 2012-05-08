@@ -24,6 +24,8 @@ sub postcode_to_address
 
 __END__
 
+=encoding UTF-8
+
 =head1 NAME
 
 [% config.base %] - [% config.abstract %]
@@ -46,25 +48,6 @@ inserts the postcode data read by the processing module into an SQLite
 database. The main module provides a way to access the postcodes in an
 existing SQLite database.
 
-=head2 Building the database
-
-To build the database, use the scripts in the F<xt> directory of the
-distribution. You need to edit these scripts to point to the files you
-want to use.
-
-The script F<update.pl> uses the L<[% config.base %]::Update> module
-to update the CSV files on your hard disk from the Japan Post Office
-web site. It downloads two files, F<ken_all.zip> and
-F<jigyosyo.zip>. The user then needs to unzip these files.
-
-The script F<insert-all.pl> inserts the file F<KEN_ALL.CSV> into a
-database specified in the module F<PostCodeFiles.pm> found in the
-F<xt> directory. The user needs to edit this file to point to
-whereever the database files should be created. The script
-F<insert-jigyosyo.pl> inserts the F<JIGYOSYO.CSV> into the database
-specified. Again, the user needs to edit the F<PostCodeFiles.pm>
-module to specify where things should go.
-
 =head1 METHODS
 
 =head2 new
@@ -82,16 +65,55 @@ L<Building the database> above.
     my $address = $gpj->postcode_to_address ('9012204');
 
 [% INCLUDE "lookup-postcode" %]
-#line 86 "Main.pm.tmpl"
+
+=head1 Building the database
+
+The module comes with abbreviated versions of the input CSV files and
+generates short versions of the database for its testing.
+
+To build the full version of the database, it is necessary to download
+and process the post office's files. These files are not included in
+the distribution because they are very large files and change monthly.
+
+The scripts required are in the F<xt> directory of the
+distribution. These files must be edited to point to the location of
+the input files and the database files on the user's system.
+
+The script F<update.pl> uses the L<[% config.base %]::Update> module
+to update the CSV files on the user's local storage from the Japan
+Post Office web site. It downloads two files, F<ken_all.zip> and
+F<jigyosyo.zip>. The user then needs to unzip these files.
+
+The script F<insert-all.pl> inserts the file F<KEN_ALL.CSV> into a
+database specified in the helper module F<PostCodeFiles.pm> found in
+the F<xt> directory. The user needs to edit the helper module to point
+to whereever the database files should be created. The script
+F<insert-jigyosyo.pl> inserts the F<JIGYOSYO.CSV> into the database
+specified. Again, the user needs to edit the F<PostCodeFiles.pm>
+module to specify where things should go.
 
 =head1 SEE ALSO
+
+L<http://www.post.japanpost.jp/zipcode/download.html>: This is the
+main page for Japan Post's data downloads. Unfortunately the download
+page is not available in English. (If you want to find the download
+URLs but cannot read Japanese, the accompanying module 
+L<[% config.base %]::Update> contains the URLs needed to download the data
+without having to search through this page for the correct address.)
 
 L<Number::ZipCode::JP> - validate Japanese zip-codes. This is a huge
 regular expression made from the same data file which this module
 reads, which can be used to validate a Japanese postal code.
 
+L<http://www.lemoda.net/japan/postcodes/index.html>: This is the
+module author's "scrapbook" page containing information from the
+internet about the postcode file. It includes links to relevant blog
+posts and links to software systems for handling the data.
+
+[% INCLUDE "terminology" %]
+
 [% INCLUDE "author" %]
-#line 95 "Main.pm.tmpl"
+#line
 
 # Local variables:
 # mode: perl
