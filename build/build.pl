@@ -64,7 +64,8 @@ for my $template (@pm_templates) {
     if (-f $input_file) {
         # Make it possible to write to the output file.
         chmod 0666, $output_file;
-        $tt->process ($input_file, \%vars, $output_file, {binmode => 'utf8'})
+        my $input = read_input_file ($input_file);
+        $tt->process (\$input, \%vars, $output_file, {binmode => 'utf8'})
         or die ''. $tt->error ();
         # Make it impossible to edit the output file.
         chmod 0444, $output_file;
@@ -80,13 +81,14 @@ for my $template (@templates) {
     my $input_file = "$tmpl_dir/$template.tmpl";
     my $output_file = "$base_dir/$template";
 #    print "$input_file $output_file\n";
-    $tt->process ($input_file, \%vars, $output_file, {binmode => 'utf8'})
+    my $input = read_input_file ($input_file);
+    $tt->process (\$input, \%vars, $output_file, {binmode => 'utf8'})
     or die ''. $tt->error ();
 }
 
 # Build the files using the standard Perl build process. Run a test.
 
-system ("cd $base_dir;perl Makefile.PL; make; make test");
+# system ("cd $base_dir;perl Makefile.PL; make; make test");
 
 exit;
 
@@ -163,13 +165,13 @@ sub get_ken_all_fields
     my $field = {};
     push @ken_all_fields, $field;
     while (<$input>) {
-        chomp;
         if (/^\s*$/) {
             $field = {};
             push @ken_all_fields, $field;
         }
         else {
             if (! $field->{name}) {
+                chomp;
                 $field->{name} = $_;
             }
             else {
@@ -179,4 +181,21 @@ sub get_ken_all_fields
     }
     close $input or die $!;
     return \@ken_all_fields;
+}
+
+sub read_input_file
+{
+    my ($input_file) = @_;
+    my $line_file = $input_file;
+    $line_file =~ s!.*/!!;
+    my $input = '';
+    open my $in, "<:encoding(utf8)", $input_file or die $!;
+    while (<$in>) {
+        if (/^#line/) {
+            $_ = sprintf ("#line %d \"%s\"\n", $. + 1, $line_file);
+        }
+        $input .= $_;
+    }
+    close $in or die $!;
+    return $input;
 }

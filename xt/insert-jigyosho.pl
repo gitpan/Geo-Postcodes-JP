@@ -4,13 +4,15 @@ use strict;
 BEGIN {
     use FindBin;
     use lib "$FindBin::Bin/../lib";
+    use lib "$FindBin::Bin";
 }
 use Geo::Postcodes::JP::DB;
+use PostCodeFiles qw/$jigyosyo_db $no_jigyosyo_db/;
 
 my $jigyosyo_file = "$FindBin::Bin/JIGYOSYO.CSV";
 my $db_dir = '/home/ben/projects/Geo-Postcodes-JP/xt';
-my $db_orig = "$db_dir/ken_all.db";
-my $db_copy = "$db_dir/jigyosyo.db";
+my $db_orig = $no_jigyosyo_db;
+my $db_copy = $jigyosyo_db;
 
 system ("cp $db_orig $db_copy");
 

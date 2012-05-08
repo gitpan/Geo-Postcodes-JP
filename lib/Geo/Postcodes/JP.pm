@@ -2,7 +2,7 @@ package Geo::Postcodes::JP;
 
 use warnings;
 use strict;
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
 
 use Geo::Postcodes::JP::DB;
@@ -19,8 +19,8 @@ sub new
 sub postcode_to_address
 {
     my ($object, $postcode) = @_;
-    my $address = $object->{db}->lookup_postcode ($postcode);
-    return $address;
+    my $addresses = $object->{db}->lookup_postcode ($postcode);
+    return $addresses;
 }
 
 1;
@@ -41,23 +41,44 @@ Geo::Postcodes::JP - handle the Japan Post Office postal code data
 
 =head1 DESCRIPTION
 
-This package contains modules for reading the file of postcodes
-supplied by Japan Post and inserting the postcodes into an SQLite
-database. The main module provides a way to access the postcodes.
+This package contains a series of modules for handling the files of
+postcodes supplied by Japan Post. L<Geo::Postcodes::JP::Update>
+downloads the data files.  L<Geo::Postcodes::JP::Process> parses the
+data files, and can improve the data.  L<Geo::Postcodes::JP::DB>
+inserts the postcode data read by the processing module into an SQLite
+database. The main module provides a way to access the postcodes in an
+existing SQLite database.
 
 =head2 Building the database
 
-To use this, you need to have built the database already.
-
-The scripts to build the database are in the F<xt> directory of the
+To build the database, use the scripts in the F<xt> directory of the
 distribution. You need to edit these scripts to point to the files you
 want to use.
+
+The script F<update.pl> uses the L<Geo::Postcodes::JP::Update> module
+to update the CSV files on your hard disk from the Japan Post Office
+web site. It downloads two files, F<ken_all.zip> and
+F<jigyosyo.zip>. The user then needs to unzip these files.
+
+The script F<insert-all.pl> inserts the file F<KEN_ALL.CSV> into a
+database specified in the module F<PostCodeFiles.pm> found in the
+F<xt> directory. The user needs to edit this file to point to
+whereever the database files should be created. The script
+F<insert-jigyosyo.pl> inserts the F<JIGYOSYO.CSV> into the database
+specified. Again, the user needs to edit the F<PostCodeFiles.pm>
+module to specify where things should go.
 
 =head1 METHODS
 
 =head2 new
 
     my $gpj = Geo::Postcodes::JP->new (
+        db_file => '/path/to/database/file',
+    );
+
+"New" creates a new postcode-lookup object. The parameter is the path
+to the database file, which is the file created in the stage
+L<Building the database> above.
 
 =head2 postcode_to_address
 
@@ -70,30 +91,40 @@ value is a hash reference with the following keys.
 
 =item postcode
 
+The seven-digit postcode itself, for example 0708033.
 
 
 =item ken_kanji
 
+The kanji form of the prefecture name, for example 北海道.
 
 
 =item ken_kana
 
+The kana form of the prefecture name, for example ホッカイドウ.
 
 
 =item city_kanji
 
+The kanji form of the city name, for example 旭川市. In some instances
+this data will consist of "gun" and "machi" or "shi" and "ku"
+information rather than just a city name, depending on the information
+in the Japan Post Office file itself.
 
 
 =item city_kana
 
+The kana form of the city name, for example アサヒカワシ.
 
 
 =item address_kanji
 
+The final part of the address in kanji, for example 神居町雨紛.
 
 
 =item address_kana
 
+The final part of the address in kana, for example カムイチョウウブン.
 
 
 =item 
@@ -122,6 +153,13 @@ This is the specific address of the place of business.
 
 =back
 
+#line 86 "Main.pm.tmpl"
+
+=head1 SEE ALSO
+
+L<Number::ZipCode::JP> - validate Japanese zip-codes. This is a huge
+regular expression made from the same data file which this module
+reads, which can be used to validate a Japanese postal code.
 
 =head1 AUTHOR
 
@@ -138,6 +176,7 @@ same terms as the Perl programming language itself.
 =cut
 
 
+#line 95 "Main.pm.tmpl"
 
 # Local variables:
 # mode: perl

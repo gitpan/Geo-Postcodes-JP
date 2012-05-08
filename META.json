@@ -17,7 +17,8 @@
       "directory" : [
          "t",
          "inc",
-         "tmpl"
+         "tmpl",
+         "xt"
       ]
    },
    "prereqs" : {
@@ -50,5 +51,5 @@
          "url" : "https://github.com/benkasminbullock/Geo-Postcodes-JP"
       }
    },
-   "version" : "0.005"
+   "version" : "0.006"
 }

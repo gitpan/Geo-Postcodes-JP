@@ -8,7 +8,6 @@ lib/Geo/Postcodes/JP/Process.pm
 lib/Geo/Postcodes/JP/Update.pm
 Makefile.PL
 MANIFEST			This list of files
-README
 t/Geo-Postcodes-JP-DB.t
 t/Geo-Postcodes-JP-Update.t
 t/Geo-Postcodes-JP-Process.t
@@ -26,5 +25,6 @@ tmpl/Update.pm.tmpl
 xt/insert-all.pl
 xt/insert-jigyosho.pl
 xt/lookup-single.pl
+xt/update.pl
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

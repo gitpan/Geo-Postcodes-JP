@@ -2,13 +2,14 @@
 use warnings;
 use strict;
 BEGIN {
-use FindBin;
-use lib "$FindBin::Bin/../lib";
+    use FindBin;
+    use lib "$FindBin::Bin/../lib";
+    use lib "$FindBin::Bin";
 }
 use Geo::Postcodes::JP::DB qw/make_database test_database/;
+use PostCodeFiles qw/$db_file/;
 
 my $postcode_file = "$FindBin::Bin/KEN_ALL.CSV";
-my $db_file = "$FindBin::Bin/ken_all.db";
 my $schema_file = "$FindBin::Bin/../db/schema.sql";
 
 if (-f $db_file) {

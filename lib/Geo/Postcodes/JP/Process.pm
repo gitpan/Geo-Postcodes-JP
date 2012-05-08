@@ -17,14 +17,15 @@ require Exporter;
                    concatenate_multi_line
                    process_line
                    process_jigyosyo_line
+                   improve_postcodes
                /;
 use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
-#line 23 "Process.pm.tmpl"
+#line 26 "Process.pm.tmpl"
 
 # Lingua::JA::Moji supplies the routine to convert half-width katakana
 # into full-width katakana.
@@ -81,6 +82,7 @@ koushin-no-hyouji
 henkou-riyuu
 
 /;
+#line 70 "Process.pm.tmpl"
 
 my @jigyosyo_fields = qw/
 number
@@ -98,7 +100,7 @@ multiple-postcode
 Alteration code
 
 /;
-#line 73 "Process.pm.tmpl"
+#line 77 "Process.pm.tmpl"
 
 =head2 read_ken_all
 
@@ -156,7 +158,11 @@ The values of the hash are
 
 =item number
 
-The JIS code number for the region. The JIS standards for regions ofJapan are numbered JIS X 0401 (1973) for the prefecture identificationcodes, and JIS X0402 (2003) identification codes for cities, towns andvillages.
+The JIS code number for the region. The JIS standards for regions of
+Japan are numbered JIS X 0401 (1973) for the prefecture identification
+codes, and JIS X0402 (2003) identification codes for cities, towns and
+villages.
+
 
 
 =item old_postcode
@@ -164,9 +170,11 @@ The JIS code number for the region. The JIS standards for regions ofJapan are nu
 The old three or five digit postcode.
 
 
+
 =item new_postcode
 
 The new seven digit postcode.
+
 
 
 =item ken_kana
@@ -174,9 +182,11 @@ The new seven digit postcode.
 The kana version of the prefecture.
 
 
+
 =item city_kana
 
 The kana version of the city.
+
 
 
 =item address_kana
@@ -184,9 +194,11 @@ The kana version of the city.
 The kana version of the address.
 
 
+
 =item ken_kanji
 
 The kanji version of the prefecture.
+
 
 
 =item city_kanji
@@ -194,14 +206,18 @@ The kanji version of the prefecture.
 The kanji version of the city.
 
 
+
 =item address_kanji
 
 The kanji version of the address.
 
 
+
 =item one-region-multiple-postcodes
 
-This is 1 if the same address has more than one postcode, zerootherwise.
+This is 1 if the same address has more than one postcode, zero
+otherwise.
+
 
 
 =item numbering-start
@@ -209,14 +225,18 @@ This is 1 if the same address has more than one postcode, zerootherwise.
 Indicates if numbering starts, 1 if so.
 
 
+
 =item has-choume
 
 Indicates there is a division into "choume".
 
 
+
 =item one-postcode-multiple-regions
 
-This is 1 if the same postcode covers more than one region, zerootherwise.
+This is 1 if the same postcode covers more than one region, zero
+otherwise.
+
 
 
 =item koushin-no-hyouji
@@ -224,9 +244,11 @@ This is 1 if the same postcode covers more than one region, zerootherwise.
 0 = no change, 1 = change, 2 = delete
 
 
+
 =item henkou-riyuu
 
 Reason for change.
+
 
 
 =item 
@@ -239,6 +261,8 @@ Reason for change.
 See also the L<Japan Post explanation of the KEN_ALL.CSV file|http://www.post.japanpost.jp/zipcode/dl/readme.html> in Japanese.
 
 =cut
+
+#line 146 "Process.pm.tmpl"
 
 sub process_line
 {
@@ -261,38 +285,88 @@ use constant ADDRESS_KANA => 5;
 use constant ADDRESS_KANJI => 8;
 use constant NEW_POSTCODE => 2;
 
+# Add more data to a single entry which spans multiple lines of the
+# input file.
+
+sub add_more_data
+{
+    my ($multi_lines, $line) = @_;
+#    print "Adding @$line to @$multi_lines\n";
+    for my $i (0..$#$line) {
+        if ($i eq ADDRESS_KANA || $i eq ADDRESS_KANJI) {
+            if (defined $multi_lines->[$i]) {
+                $multi_lines->[$i] .= $line->[$i];
+            }
+            else {
+                # Set from the first value.
+                $multi_lines->[$i] = $line->[$i];
+            }
+        }
+        else {
+            if (defined $multi_lines->[$i]) {
+                # This is not the first value.
+                if ($line->[$i] ne $multi_lines->[$i]) {
+                    warn "Mismatch $line->[$i] and $multi_lines->[$i]";
+                }
+            }
+            else {
+                # Set from the first value.
+                $multi_lines->[$i] = $line->[$i];
+            }
+        }
+    }
+}
+
+
 use utf8;
+
+# Given the list of postcodes and the list of duplicates, turn the
+# duplicates which are multiline into non-multiline.
 
 sub concatenate_multi_line
 {
     my ($postcodes, $duplicates) = @_;
     my @concatenated;
     my $total_brackets = 0;
+    my %done;
     for my $line (@$postcodes) {
         my $postcode = $line->[NEW_POSTCODE];
         if ($duplicates->{$postcode}) {
             my @dups = @{$duplicates->{$postcode}};
             my $multi;
+            my @multi_lines;
             for my $ln (@dups) {
+                if ($done{$ln}) {
+                    next;
+                }
                 my $line = $postcodes->[$ln];
                 my $address_kana = $line->[ADDRESS_KANA];
                 my $address_kanji = $line->[ADDRESS_KANJI];
                 if ($address_kanji =~ /\x{FF08}/) {
-                    print "$postcode\n";
-                    print "match: (\n";
+#                    print "$postcode\n";
+#                    print "match: (\n";
                     $multi = 1;
                     $total_brackets++;
                 }
                 if ($address_kanji =~ /\x{FF09}/) {
-                    print "$address_kanji\n";
-                    print "match: )\n";
+#                    print "$address_kanji\n";
+#                    print "match: )\n";
                 }
                 if ($multi) {
-                    print "In multi: $address_kanji\n";
+#                    print "In multi: $address_kanji\n";
+                    add_more_data (\@multi_lines, $line);
                 }
+                $done{$ln} = 1;
             }
-            if (! $multi) {
+            if ($multi) {
+                push @concatenated, \@multi_lines;
+            }
+            else {
+                # Was not a multiline, so add each entry separately.
                 for my $ln (@dups) {
+                    if ($done{$ln}) {
+                        next;
+                    }
                     my $mline = $postcodes->[$ln];
                     push @concatenated, $mline;
                 }
@@ -302,7 +376,7 @@ sub concatenate_multi_line
             push @concatenated, $line;
         }
     }
-    print $total_brackets;
+#    print $total_brackets;
     return \@concatenated;
 }
 
@@ -381,9 +455,11 @@ The values of the hash are
 As for the main postcode file.
 
 
+
 =item kana
 
 The name of the place of business in kana.
+
 
 
 =item kanji
@@ -391,9 +467,11 @@ The name of the place of business in kana.
 The name of the place of business in kanji.
 
 
+
 =item ken_kanji
 
 The kanji version of the prefecture name.
+
 
 
 =item city_kanji
@@ -401,9 +479,11 @@ The kanji version of the prefecture name.
 The kanji version of the city name.
 
 
+
 =item address_kanji
 
 The kanji version of the address name.
+
 
 
 =item street_number
@@ -411,9 +491,11 @@ The kanji version of the address name.
 The exact street number of the place of business.
 
 
+
 =item new_postcode
 
 As for the "ken_all" fields.
+
 
 
 =item old_postcode
@@ -421,14 +503,18 @@ As for the "ken_all" fields.
 As for the "ken_all" fields.
 
 
+
 =item post-office
 
 The post office which handles mail for this postcode.
 
 
+
 =item type
 
-0=Large company1=Private
+0=Large company
+1=Private
+
 
 
 =item multiple-postcode
@@ -436,9 +522,13 @@ The post office which handles mail for this postcode.
 0=Not multiple, also 1,2,3.
 
 
+
 =item Alteration code
 
-0=No change1=New addition2=Deleted
+0=No change
+1=New addition
+2=Deleted
+
 
 
 =item 
@@ -452,6 +542,7 @@ See also the L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.j
 
 =cut
 
+#line 347 "Process.pm.tmpl"
 
 sub process_jigyosyo_line
 {
@@ -460,6 +551,22 @@ sub process_jigyosyo_line
     @values{@jigyosyo_fields} = @$line;
     $values{kana} = hw2katakana ($values{kana});
     return %values;
+}
+
+=head2 improve_postcodes
+
+    $postcodes = improve_postcodes ($postcodes);
+
+Improve the postcodes as much as possible by unifying lines etc.
+
+=cut
+
+sub improve_postcodes
+{
+    my ($postcodes) = @_;
+    my $duplicates = find_duplicates ($postcodes);
+    $postcodes = concatenate_multi_line ($postcodes, $duplicates);
+    return $postcodes;
 }
 
 1;

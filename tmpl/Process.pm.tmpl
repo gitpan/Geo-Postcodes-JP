@@ -17,11 +17,12 @@ require Exporter;
                    concatenate_multi_line
                    process_line
                    process_jigyosyo_line
+                   improve_postcodes
                /;
 use utf8;
 
 [% INCLUDE "perl_stuff" %]
-#line 23 "Process.pm.tmpl"
+#line 26 "Process.pm.tmpl"
 
 # Lingua::JA::Moji supplies the routine to convert half-width katakana
 # into full-width katakana.
@@ -65,13 +66,14 @@ my @fields = qw/
 [% value.name %]
 [%- END %]
 /;
+#line 70 "Process.pm.tmpl"
 
 my @jigyosyo_fields = qw/
 [%- FOR value IN jigyosyo_fields %]
 [% value.name %]
 [%- END %]
 /;
-#line 73 "Process.pm.tmpl"
+#line 77 "Process.pm.tmpl"
 
 =head2 read_ken_all
 
@@ -140,6 +142,8 @@ See also the L<Japan Post explanation of the KEN_ALL.CSV file|http://www.post.ja
 
 =cut
 
+#line 146 "Process.pm.tmpl"
+
 sub process_line
 {
     my ($line) = @_;
@@ -161,38 +165,88 @@ use constant ADDRESS_KANA => 5;
 use constant ADDRESS_KANJI => 8;
 use constant NEW_POSTCODE => 2;
 
+# Add more data to a single entry which spans multiple lines of the
+# input file.
+
+sub add_more_data
+{
+    my ($multi_lines, $line) = @_;
+#    print "Adding @$line to @$multi_lines\n";
+    for my $i (0..$#$line) {
+        if ($i eq ADDRESS_KANA || $i eq ADDRESS_KANJI) {
+            if (defined $multi_lines->[$i]) {
+                $multi_lines->[$i] .= $line->[$i];
+            }
+            else {
+                # Set from the first value.
+                $multi_lines->[$i] = $line->[$i];
+            }
+        }
+        else {
+            if (defined $multi_lines->[$i]) {
+                # This is not the first value.
+                if ($line->[$i] ne $multi_lines->[$i]) {
+                    warn "Mismatch $line->[$i] and $multi_lines->[$i]";
+                }
+            }
+            else {
+                # Set from the first value.
+                $multi_lines->[$i] = $line->[$i];
+            }
+        }
+    }
+}
+
+
 use utf8;
+
+# Given the list of postcodes and the list of duplicates, turn the
+# duplicates which are multiline into non-multiline.
 
 sub concatenate_multi_line
 {
     my ($postcodes, $duplicates) = @_;
     my @concatenated;
     my $total_brackets = 0;
+    my %done;
     for my $line (@$postcodes) {
         my $postcode = $line->[NEW_POSTCODE];
         if ($duplicates->{$postcode}) {
             my @dups = @{$duplicates->{$postcode}};
             my $multi;
+            my @multi_lines;
             for my $ln (@dups) {
+                if ($done{$ln}) {
+                    next;
+                }
                 my $line = $postcodes->[$ln];
                 my $address_kana = $line->[ADDRESS_KANA];
                 my $address_kanji = $line->[ADDRESS_KANJI];
                 if ($address_kanji =~ /\x{FF08}/) {
-                    print "$postcode\n";
-                    print "match: (\n";
+#                    print "$postcode\n";
+#                    print "match: (\n";
                     $multi = 1;
                     $total_brackets++;
                 }
                 if ($address_kanji =~ /\x{FF09}/) {
-                    print "$address_kanji\n";
-                    print "match: )\n";
+#                    print "$address_kanji\n";
+#                    print "match: )\n";
                 }
                 if ($multi) {
-                    print "In multi: $address_kanji\n";
+#                    print "In multi: $address_kanji\n";
+                    add_more_data (\@multi_lines, $line);
                 }
+                $done{$ln} = 1;
             }
-            if (! $multi) {
+            if ($multi) {
+                push @concatenated, \@multi_lines;
+            }
+            else {
+                # Was not a multiline, so add each entry separately.
                 for my $ln (@dups) {
+                    if ($done{$ln}) {
+                        next;
+                    }
                     my $mline = $postcodes->[$ln];
                     push @concatenated, $mline;
                 }
@@ -202,7 +256,7 @@ sub concatenate_multi_line
             push @concatenated, $line;
         }
     }
-    print $total_brackets;
+#    print $total_brackets;
     return \@concatenated;
 }
 
@@ -289,6 +343,7 @@ See also the L<Japan Post explanation of the JIGYOSYO.CSV file|http://www.post.j
 
 =cut
 
+#line 345 "Process.pm.tmpl"
 
 sub process_jigyosyo_line
 {
@@ -297,6 +352,22 @@ sub process_jigyosyo_line
     @values{@jigyosyo_fields} = @$line;
     $values{kana} = hw2katakana ($values{kana});
     return %values;
+}
+
+=head2 improve_postcodes
+
+    $postcodes = improve_postcodes ($postcodes);
+
+Improve the postcodes as much as possible by unifying lines etc.
+
+=cut
+
+sub improve_postcodes
+{
+    my ($postcodes) = @_;
+    my $duplicates = find_duplicates ($postcodes);
+    $postcodes = concatenate_multi_line ($postcodes, $duplicates);
+    return $postcodes;
 }
 
 1;

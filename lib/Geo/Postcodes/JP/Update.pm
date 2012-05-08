@@ -2,6 +2,8 @@
 
 Geo::Postcodes::JP::Update - update Japan Post Office postcode data
 
+=head1 FUNCTIONS
+
 =cut
 
 package Geo::Postcodes::JP::Update;
@@ -11,8 +13,9 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
+#line 16 "Update.pm.tmpl"
 
 use LWP::UserAgent;
 
@@ -25,9 +28,19 @@ my $jigyosyo_url =
 
 =head2 update_files
 
-Update the files from the website. This is not finished yet although
-it works a bit (you need to edit the code itself to make it work
-correctly).
+    update_files ('ken_all.zip', 'jigyosyo.zip');
+
+Get or update the two CSV files, KEN_ALL.CSV and JIGYOSYO.CSV from the
+Japan Post website.
+
+The two arguments are the file name of the zipped KEN_ALL.CSV file and
+the zipped JIGYOSYO.CSV file. If these files exist, the routine tries
+to check whether the existing files are newer than the files on the
+post office website, and only downloads if the local files are older.
+
+People who are thinking of running this regularly might like to know
+that Japan Post usually updates the postcode files on the last day of
+the month.
 
 =cut
 
@@ -64,7 +77,8 @@ sub download
         else {
             print "Remote file is older, not downloading.\n";
         }
-    } else {
+    }
+    else {
         # There is no local file, so just download it.
         print "Local file '$file' does not exist.\n";
         my $response = $agent->get ($url, ":content_file" => $out);
@@ -91,10 +105,6 @@ sub mdate
 
 __END__
 
-=head1 SEE ALSO
-
-L<Number::ZipCode::JP> - validate Japanese zip-codes.
-
 =head1 AUTHOR
 
 Ben Bullock, <bkb@cpan.org>
@@ -110,8 +120,7 @@ same terms as the Perl programming language itself.
 =cut
 
 
-
-=cut
+#line 107 "Update.pm.tmpl"
 
 # Local variables:
 # mode: perl

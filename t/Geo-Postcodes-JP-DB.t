@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 12;
+use Test::More tests => 13;
 BEGIN { use_ok ('Geo::Postcodes::JP::DB') };
 use Geo::Postcodes::JP::DB qw/create_database/;
 use FindBin;
@@ -34,12 +34,12 @@ rm_db ();
 # Try to create the database from the schema using the
 # "create_database" routine.
 
-#eval {
+eval {
     create_database (
     db_file => $test_db,
         schema_file => $schema_file,
     );
-#};
+};
 
 # Test whether an error occurred in creating the database.
 
@@ -62,6 +62,7 @@ $o = Geo::Postcodes::JP::DB::make_database (
     schema_file => $schema_file,
     postcode_file => $test_pc_file,
 );
+#print "\n";
 
 ok ($o, "make database returned something");
 
@@ -72,8 +73,7 @@ ok (-f $test_db, "The database file was created.");
 # This is the file which contains a testing version of the jigyosyo
 # information.
 
-my $test_jigyosyo_file = File::Spec->catpath (undef, , $FindBin::Bin,
-                                              'jigyosyo-some.csv');
+my $test_jigyosyo_file = "$FindBin::Bin/jigyosyo-some.csv";
 
 eval {
     $o->add_jigyosyo (
@@ -91,16 +91,18 @@ my $nishionuma = $o->lookup_postcode ('3050054');
 
 ok (defined $nishionuma, "Got a defined result for Nishi Oonuma postcode");
 
-ok ($nishionuma->{address_kanji} eq '西大沼',
+ok (scalar @$nishionuma == 1, "Only one postcode for Nishi Oonuma");
+
+ok ($nishionuma->[0]->{address_kanji} eq '西大沼',
     "The expected address kanji was found");
-ok ($nishionuma->{ken_kanji} eq '茨城県',
+ok ($nishionuma->[0]->{ken_kanji} eq '茨城県',
     "The expected ken kanji was found");
 
 my $mitoshiyakusho = $o->lookup_postcode ('3108610');
 
 ok (defined $mitoshiyakusho, "Got a defined result for Mito City Hall");
 
-ok ($mitoshiyakusho->{jigyosyo_kanji} eq '水戸市役所',
+ok ($mitoshiyakusho->[0]->{jigyosyo_kanji} eq '水戸市役所',
     "Got correct kanji name of Mito City Hall");
 
 # Remove the generated file.

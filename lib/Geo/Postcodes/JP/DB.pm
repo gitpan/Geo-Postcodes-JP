@@ -20,6 +20,10 @@ Japanese postcodes.
 
 =head1 METHODS
 
+All of these methods make use of an SQLite database file. All of the
+fields suffixed with C<_id> are identification numbers of the SQLite
+database itself.
+
 =cut
 
 package Geo::Postcodes::JP::DB;
@@ -28,15 +32,13 @@ require Exporter;
 @EXPORT_OK = qw/
                    make_database
                    create_database
-                   lookup_postcode
-                   test_database
                /;
 
 use warnings;
 use strict;
-our $VERSION = '0.005';
+our $VERSION = '0.006';
 
-#line 22 "DB.pm.tmpl"
+#line 39 "DB.pm.tmpl"
 
 # Need the postcode-reading function.
 
@@ -46,6 +48,7 @@ qw/
       process_line
       read_jigyosyo
       process_jigyosyo_line
+      improve_postcodes
   /;
 
 # Require DBI for communicating with the database.
@@ -142,10 +145,11 @@ EOF
 
     $city_id = $o->city_search ($kanji, $ken_id);
 
-There are some cities with the same names in different prefectures,
-for example there is a 府中市 (Fuchuu-shi) in Tokyo and one in
-Hiroshima prefecture, so we need to have a "city_search" routine
-rather than using the "search_placename" generic search for the
+Search for a city named C<$kanji> in prefecture identified by
+C<$ken_id>. There are some examples of cities with the same names in
+different prefectures. For example there is a 府中市 (Fuchuu-shi) in
+Tokyo and one in Hiroshima prefecture. Thus a "city_search" routine
+rather than the "search_placename" generic search is needed for
 cities.
 
 =cut
@@ -267,9 +271,11 @@ sub search_placename_kanji
     $o->insert_postcode ($postcode, $address_id);
 
 Insert a postcode C<$postcode> into the table of postcodes with
-corresponding address C<$address_id>. This is for addresses which are
-not jigyosyo (places of business). Addresses for places of business
-should use L</jigyosyo_insert_postcode>.
+corresponding address C<$address_id>. The address identification
+number, C<$address_id>, is usually got from L</address_insert> or
+L</address_search>. This method is for addresses which are not
+jigyosyo (places of business). Addresses for places of business should
+use L</jigyosyo_insert_postcode>.
 
 =cut
 
@@ -298,7 +304,9 @@ EOF
     $o->jigyosyo_insert_postcode ($postcode, $address_id, $jigyosyo_id);
 
 Insert a postcode for a "jigyosyo" identified by C<$jigyosyo_id> into
-the table. $Jigyosyo_id is usually got from L</jigyosyo_insert>.
+the table. $Jigyosyo_id is usually got from
+L</jigyosyo_insert>. C<$Address_id> is as described in the
+documentation of L</insert_postcode>.
 
 =cut
 
@@ -464,7 +472,7 @@ sub db_connect
     $o->insert_postcodes ($postcodes);
 
 Insert the postcodes in the array reference C<$postcodes> into the
-database specified by C<$db_file>.
+database specified by L</new>.
 
 =cut
 
@@ -567,6 +575,7 @@ sub insert_postcode_file
         print "Reading postcodes from '$postcode_file'.\n";
     }
     my $postcodes = read_ken_all ($postcode_file);
+    $postcodes = improve_postcodes ($postcodes);
     $o->insert_postcodes ($postcodes);
 }
 
@@ -579,7 +588,9 @@ sub insert_postcode_file
     );
 
 Make the database specified by C<db_file> using the schema specified
-by C<schema_file> from the data in C<postcode_file>.
+by C<schema_file> from the data in C<postcode_file>. The schema is
+supplied in the F<db> subdirectory of the distribution in the file
+F<db/schema.sql>.
 
 =cut
 
@@ -695,10 +706,10 @@ sub add_jigyosyo
 
 =head2 lookup_jigyosyo
 
-    my $jigyosyo = lookup_jigyosyo (21);
+    my $jigyosyo = lookup_jigyosyo ($jigyosyo_id);
 
-Given the jigyosyo id number, return its kanji and kana names in a
-hash reference.
+Given a jigyosyo id number, return its kanji and kana names in a hash
+reference.
 
 =cut
 
@@ -730,8 +741,8 @@ sub jigyosyo_lookup
 
 =head2 lookup_postcode
 
-    my $address = $o->lookup_postcode ('3108610');
-    print $address->{ken}->{kanji}, "\n";
+    my $addresses = $o->lookup_postcode ('3108610');
+    print $address->[0]->{ken}->{kanji}, "\n";
     # Prints 茨城県
 
 Given a postcode, get the corresponding address details. The return
@@ -741,30 +752,40 @@ value is a hash reference with the following keys.
 
 =item postcode
 
+The seven-digit postcode itself, for example 0708033.
 
 
 =item ken_kanji
 
+The kanji form of the prefecture name, for example 北海道.
 
 
 =item ken_kana
 
+The kana form of the prefecture name, for example ホッカイドウ.
 
 
 =item city_kanji
 
+The kanji form of the city name, for example 旭川市. In some instances
+this data will consist of "gun" and "machi" or "shi" and "ku"
+information rather than just a city name, depending on the information
+in the Japan Post Office file itself.
 
 
 =item city_kana
 
+The kana form of the city name, for example アサヒカワシ.
 
 
 =item address_kanji
 
+The final part of the address in kanji, for example 神居町雨紛.
 
 
 =item address_kana
 
+The final part of the address in kana, for example カムイチョウウブン.
 
 
 =item 
@@ -794,7 +815,6 @@ This is the specific address of the place of business.
 =back
 
 
-
 =cut
 
 my @fields = qw/
@@ -807,7 +827,7 @@ my @fields = qw/
                 address_kana
                 jigyosyo_id
                /;
-#line 734 "DB.pm.tmpl"
+#line 756 "DB.pm.tmpl"
 
 my $sql_fields = join ",", @fields;
 $sql_fields =~ s/_(kanji|kana)/\.$1/g;
@@ -835,20 +855,24 @@ sub lookup_postcode
     if (! $results || @$results == 0) {
         return;
     }
-    my %values;
-    @values{@fields} = @{$results->[0]};
-    if (defined $values{jigyosyo_id}) {
-        my $jigyosyo_values = $o->jigyosyo_lookup ($values{jigyosyo_id});
-        if ($jigyosyo_values) {
-            $values{jigyosyo_kanji} = $jigyosyo_values->{kanji};
-            $values{jigyosyo_kana} = $jigyosyo_values->{kana};
-            $values{street_number} = $jigyosyo_values->{street_number};
+    my @addresses;
+    for my $result (@$results) {
+        my %values;
+        @values{@fields} = @{$result};
+        if (defined $values{jigyosyo_id}) {
+            my $jigyosyo_values = $o->jigyosyo_lookup ($values{jigyosyo_id});
+            if ($jigyosyo_values) {
+                $values{jigyosyo_kanji} = $jigyosyo_values->{kanji};
+                $values{jigyosyo_kana} = $jigyosyo_values->{kana};
+                $values{street_number} = $jigyosyo_values->{street_number};
+            }
         }
+        # Don't leave this in the result, since it is just a database ID
+        # with no meaning to the user.
+        delete $values{jigyosyo_id};
+        push @addresses, \%values;
     }
-    # Don't leave this in the result, since it is just a database ID
-    # with no meaning to the user.
-    delete $values{jigyosyo_id};
-    return \%values;
+    return \@addresses;
 }
 
 sub new
