@@ -2,7 +2,7 @@ package Geo::Postcodes::JP;
 
 use warnings;
 use strict;
-our $VERSION = '0.007';
+our $VERSION = '0.008';
 
 
 use Geo::Postcodes::JP::DB;
@@ -31,7 +31,7 @@ __END__
 
 =head1 NAME
 
-Geo::Postcodes::JP - handle the Japan Post Office postal code data
+Geo::Postcodes::JP - handle Japan Post Office postal code data
 
 =head1 SYNOPSIS
 
@@ -110,10 +110,6 @@ The final part of the address in kanji, for example 神居町雨紛.
 =item address_kana
 
 The final part of the address in kana, for example カムイチョウウブン.
-
-
-=item 
-
 
 
 =back
@@ -215,7 +211,7 @@ in the postcode data file. Some of these are actually cities, like
 some of them are not really cities but other geographical
 subdivisions, such as gun/machi or shi/ku combinations.
 
-=item address
+=item Address
 
 In this module, "address" is the term used to point to the third field
 in the postcode data file. This is called 町域 (chouiki) by the Post

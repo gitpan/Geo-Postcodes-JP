@@ -36,7 +36,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.007';
+our $VERSION = '0.008';
 
 #line 39 "DB.pm.tmpl"
 
@@ -98,11 +98,11 @@ my $verbose;
 
 =head2 search_placename
 
-    $placename_id = $o->search_placename ($kanji, $kana);
+    $placename_id = $o->search_placename ($type, $kanji, $kana);
 
-Generic search for a placename by kanji and kana. This is only used
-for the "ken" and the "jigyosyo" tables, because city and address
-names are ambiguous.
+Generic search for a placename of type C<$type> by kanji name
+C<$kanji> and kana name C<$kana>. This is only used for the "ken" and
+the "jigyosyo" tables, because city and address names are ambiguous.
 
 =cut
 
@@ -332,12 +332,6 @@ EOF
                                             $address_id, $jigyosyo_id);
 }
 
-# Format for the SQL to insert kanji, kana into the place name table.
-
-my $jigyosyo_insert_sql = <<'EOF';
-insert into jigyosyo (kanji, kana, street_number) values (?, ?, ?)
-EOF
-
 =head2 jigyosyo_insert
 
     my $jigyosyo_id = $o->jigyosyo_insert ($kanji, $kana, $street_number);
@@ -355,6 +349,11 @@ sub jigyosyo_insert
         print "Inserting jigyosyo $kanji/$kana/$street_number.\n";
     }
     if (! $o->{jigyosyo_insert_sth}) {
+        # Format for the SQL to insert kanji, kana into the place name
+        # table.
+        my $jigyosyo_insert_sql = <<'EOF';
+insert into jigyosyo (kanji, kana, street_number) values (?, ?, ?)
+EOF
         $o->{jigyosyo_insert_sth} = $o->{dbh}->prepare ($jigyosyo_insert_sql);
     }
     $o->{jigyosyo_insert_sth}->execute ($kanji, $kana, $street_number);
@@ -363,11 +362,6 @@ sub jigyosyo_insert
 }
 
 
-# Format for the SQL to insert kanji, kana into the place name table.
-
-my $ken_insert_sql = <<'EOF';
-insert into ken (kanji, kana) values (?, ?)
-EOF
 
 =head2 ken_insert
 
@@ -385,6 +379,10 @@ sub ken_insert
         print "Inserting ken $kanji/$kana\n";
     }
     if (! $o->{ken_insert_sth}) {
+        # Format for the SQL to insert kanji, kana into the place name table.
+        my $ken_insert_sql = <<'EOF';
+insert into ken (kanji, kana) values (?, ?)
+EOF
         $o->{ken_insert_sth} = $o->{dbh}->prepare ($ken_insert_sql);
     }
     $o->{ken_insert_sth}->execute ($kanji, $kana);
@@ -552,7 +550,7 @@ sub insert_postcode_file
 
 =head2 lookup_address
 
-    my $address_id = lookup_address ($o,
+    my $address_id = $o->lookup_address (
         ken => '沖縄県',
         city => '宜野湾市',
         address => '上原',
@@ -661,17 +659,16 @@ street number in a hash reference.
 
 =cut
 
-my $jigyosyo_lookup_sql = <<EOF;
-select kanji, kana, street_number from jigyosyo
-where
-id = ?
-EOF
-
 sub jigyosyo_lookup
 {
     my ($o, $jigyosyo_id) = @_;
     my %jigyosyo;
     if (! defined $o->{jigyosyo_lookup_sth}) {
+        my $jigyosyo_lookup_sql = <<EOF;
+select kanji, kana, street_number from jigyosyo
+where
+id = ?
+EOF
         $o->{jigyosyo_lookup_sth} = $o->{dbh}->prepare ($jigyosyo_lookup_sql);
     }
     $o->{jigyosyo_lookup_sth}->execute ($jigyosyo_id);
@@ -738,10 +735,6 @@ The final part of the address in kanji, for example 神居町雨紛.
 The final part of the address in kana, for example カムイチョウウブン.
 
 
-=item 
-
-
-
 =back
 
 If the postcode is a jigyosyo postcode, the result also contains
@@ -768,21 +761,23 @@ This is the specific address of the place of business.
 =cut
 
 my @fields = qw/
-                postcode
-                ken_kanji
-                ken_kana
-                city_kanji
-                city_kana
-                address_kanji
-                address_kana
-                jigyosyo_id
+                   postcode
+                   ken_kanji
+                   ken_kana
+                   city_kanji
+                   city_kana
+                   address_kanji
+                   address_kana                   jigyosyo_id
                /;
-#line 706 "DB.pm.tmpl"
+#line 703 "DB.pm.tmpl"
 
-my $sql_fields = join ",", @fields;
-$sql_fields =~ s/_(kanji|kana)/\.$1/g;
+sub make_lookup_postcode_sql
+{
 
-my $lookup_postcode_sql = <<EOF;
+    my $sql_fields = join ",", @fields;
+    $sql_fields =~ s/_(kanji|kana)/\.$1/g;
+
+    my $lookup_postcode_sql = <<EOF;
 select $sql_fields
 from postcodes, ken, city, address
 where postcodes.postcode = ?
@@ -793,11 +788,14 @@ address.city_id = city.id
 and
 postcodes.address_id = address.id
 EOF
+    return $lookup_postcode_sql;
+}
 
 sub lookup_postcode
 {
     my ($o, $postcode) = @_;
     if (! $o->{lookup_postcode_sth}) {
+        my $lookup_postcode_sql = make_lookup_postcode_sql ();
         $o->{lookup_postcode_sth} = $o->{dbh}->prepare ($lookup_postcode_sql);
     }
     $o->{lookup_postcode_sth}->execute ($postcode);
@@ -817,8 +815,8 @@ sub lookup_postcode
                 $values{street_number} = $jigyosyo_values->{street_number};
             }
         }
-        # Don't leave this in the result, since it is just a database ID
-        # with no meaning to the user.
+        # Don't leave this in the result, since it is just a database
+        # ID number with no meaning to the user.
         delete $values{jigyosyo_id};
         push @addresses, \%values;
     }

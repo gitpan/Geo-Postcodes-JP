@@ -1,5 +1,5 @@
 ---
-abstract: 'handle the Japan Post Office postal code data'
+abstract: 'handle Japan Post Office postal code data'
 author:
   - 'Ben Bullock <bkb@cpan.org>'
 build_requires:
@@ -20,6 +20,7 @@ no_index:
     - tmpl
     - xt
 requires:
+  Convert::Moji: 0
   DBD::SQLite: 0
   DBI: 0
   LWP::UserAgent: 0
@@ -28,4 +29,4 @@ resources:
   bugtracker: https://github.com/benkasminbullock/Geo-Postcodes-JP/issues
   homepage: http://prepan.org/module/3Yz7PYrBQM
   repository: https://github.com/benkasminbullock/Geo-Postcodes-JP
-version: 0.007
+version: 0.008

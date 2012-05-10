@@ -105,6 +105,10 @@ ok (defined $mitoshiyakusho, "Got a defined result for Mito City Hall");
 ok ($mitoshiyakusho->[0]->{jigyosyo_kanji} eq '水戸市役所',
     "Got correct kanji name of Mito City Hall");
 
+# For Windows.
+
+$o = undef;
+
 # Remove the generated file.
 
 rm_db ();
@@ -116,7 +120,7 @@ exit;
 sub rm_db
 {
     if (-f $test_db) {
-        unlink $test_db or die $!;
+        unlink $test_db or warn "Can't remove $test_db: $!";
     }
 }
 

@@ -23,13 +23,14 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.007';
+our $VERSION = '0.008';
 
 #line 26 "Process.pm.tmpl"
 
 # Lingua::JA::Moji supplies the routine to convert half-width katakana
 # into full-width katakana.
 
+use Convert::Moji 'make_regex';
 use Lingua::JA::Moji ':all';
 use Carp;
 
@@ -80,9 +81,8 @@ has-choume
 one-postcode-multiple-regions
 koushin-no-hyouji
 henkou-riyuu
-
 /;
-#line 70 "Process.pm.tmpl"
+#line 71 "Process.pm.tmpl"
 
 my @jigyosyo_fields = qw/
 number
@@ -98,9 +98,8 @@ post-office
 type
 multiple-postcode
 Alteration code
-
 /;
-#line 77 "Process.pm.tmpl"
+#line 78 "Process.pm.tmpl"
 
 =head2 read_ken_all
 
@@ -251,18 +250,13 @@ Reason for change.
 
 
 
-=item 
-
-
-
-
 =back
 
 See also the L<Japan Post explanation of the KEN_ALL.CSV file|http://www.post.japanpost.jp/zipcode/dl/readme.html> in Japanese.
 
 =cut
 
-#line 146 "Process.pm.tmpl"
+#line 147 "Process.pm.tmpl"
 
 sub process_line
 {
@@ -291,9 +285,22 @@ result.
 
 =cut
 
-use constant ADDRESS_KANA => 5;
-use constant ADDRESS_KANJI => 8;
+use constant NUMBER => 0;
+use constant OLD_POSTCODE => 1;
 use constant NEW_POSTCODE => 2;
+use constant KEN_KANA => 3;
+use constant CITY_KANA => 4;
+use constant ADDRESS_KANA => 5;
+use constant KEN_KANJI => 6;
+use constant CITY_KANJI => 7;
+use constant ADDRESS_KANJI => 8;
+use constant ONE_REGION_MULTIPLE_POSTCODES => 9;
+use constant NUMBERING_START => 10;
+use constant HAS_CHOUME => 11;
+use constant ONE_POSTCODE_MULTIPLE_REGIONS => 12;
+use constant KOUSHIN_NO_HYOUJI => 13;
+use constant HENKOU_RIYUU => 14;
+#line 179 "Process.pm.tmpl"
 
 # Add more data to a single entry which spans multiple lines of the
 # input file.
@@ -316,7 +323,7 @@ sub add_more_data
             if (defined $multi_lines->[$i]) {
                 # This is not the first value.
                 if ($line->[$i] ne $multi_lines->[$i]) {
-                    warn "Mismatch $line->[$i] and $multi_lines->[$i]";
+                    warn "Mismatch in field $i: $line->[$i] and $multi_lines->[$i]";
                 }
             }
             else {
@@ -541,11 +548,6 @@ The post office which handles mail for this postcode.
 
 
 
-=item 
-
-
-
-
 =back
 
 See also the
@@ -554,7 +556,7 @@ in Japanese.
 
 =cut
 
-#line 359 "Process.pm.tmpl"
+#line 361 "Process.pm.tmpl"
 
 sub process_jigyosyo_line
 {
@@ -563,6 +565,56 @@ sub process_jigyosyo_line
     @values{@jigyosyo_fields} = @$line;
     $values{kana} = hw2katakana ($values{kana});
     return %values;
+}
+
+=head2 remove_bad_addresses
+
+    $postcodes = remove_bad_addresses ($postcodes);
+
+=cut
+
+sub remove_bad_addresses
+{
+    my ($postcodes) = @_;
+
+    # The following array contains "bad addresses", text which is not
+    # an address.
+    my @bad_addresses = (
+        '以下に記載がない場合',
+        # 9013700
+        '以下に掲載がない場合'
+    );
+    my $ba_re = make_regex (@bad_addresses);
+    # These bits should be removed from the kanji and kana addresses.
+    my %remove_stuff = (
+        qr/(（その他）)/ => qr/(\(ｿﾉﾀ\))/,
+        qr/(（次のビルを除く）)/ => qr/(\(ﾂｷﾞﾉﾋﾞﾙｦﾉｿﾞｸ\))/,
+        qr/(（.*丁目）)/ => qr/(\(.*ﾁｮｳﾒ\))/,
+    );
+    for my $postcode (@$postcodes) {
+        my $address_kanji = $postcode->[ADDRESS_KANJI];
+        my $address_kana = $postcode->[ADDRESS_KANA];
+        if ($address_kanji =~ /^($ba_re)$/) {
+            my $other_kanji = $postcode->[ADDRESS_KANJI];
+            my $other_kana = $postcode->[ADDRESS_KANA];
+            $postcode->[ADDRESS_KANJI] = '';
+            $postcode->[ADDRESS_KANA] = '';
+        }
+        else {
+            for my $key (keys %remove_stuff) {
+                if ($address_kanji =~ $key) {
+                    my $remove_kanji = $1;
+                    if ($address_kana =~ $remove_stuff{$key}) {
+                        my $remove_kana = $1;
+                        $postcode->[ADDRESS_KANJI] =~ s/\Q$remove_kanji//;
+                        $postcode->[ADDRESS_KANA] =~ s/\Q$remove_kana//;
+                        last;
+                    }
+                }
+            }
+        }
+    }
+    return $postcodes;
 }
 
 =head2 improve_postcodes
@@ -578,6 +630,7 @@ sub improve_postcodes
     my ($postcodes) = @_;
     my $duplicates = find_duplicates ($postcodes);
     $postcodes = concatenate_multi_line ($postcodes, $duplicates);
+    $postcodes = remove_bad_addresses ($postcodes);
     return $postcodes;
 }
 
@@ -617,7 +670,7 @@ in the postcode data file. Some of these are actually cities, like
 some of them are not really cities but other geographical
 subdivisions, such as gun/machi or shi/ku combinations.
 
-=item address
+=item Address
 
 In this module, "address" is the term used to point to the third field
 in the postcode data file. This is called 町域 (chouiki) by the Post

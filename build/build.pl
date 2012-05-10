@@ -179,6 +179,11 @@ sub get_ken_all_fields
             }
         }
     }
+    # Remove any extra empty entry due to blank lines at the end of the
+    # file.
+    if (! $field->{name}) {
+        pop @ken_all_fields;
+    }
     close $input or die $!;
     return \@ken_all_fields;
 }

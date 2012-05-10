@@ -38,8 +38,14 @@ create table address (
        id integer primary key,
        city_id integer references city (id),
        kanji text,
-       kana text
+       kana text,
+       other_id integer references other (id)
 );
 
 create index address_idx on address (kanji, kana);
 
+create table other (
+       id integer primary key,
+       kanji text,
+       kana text
+);
