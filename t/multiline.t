@@ -6,7 +6,7 @@ use Geo::Postcodes::JP::Process qw/read_ken_all improve_postcodes/;
 use Geo::Postcodes::JP::DB 'make_database';
 use utf8;
 
-my $data = "$FindBin::Bin/bad-data.csv";
+my $data = "$FindBin::Bin/multiline.csv";
 my $postcodes = read_ken_all (
     $data,
 );

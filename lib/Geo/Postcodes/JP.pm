@@ -2,7 +2,7 @@ package Geo::Postcodes::JP;
 
 use warnings;
 use strict;
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 
 use Geo::Postcodes::JP::DB;
