@@ -40,6 +40,8 @@ my $result = $o->lookup_postcode ('0660005');
 
 ok (scalar @$result == 1, "Only one result for test postcode");
 
+$o = undef;
+
 rm_db ();
 
 exit;
@@ -50,7 +52,7 @@ exit;
 sub rm_db
 {
     if (-f $test_db) {
-        unlink $test_db or die $!;
+        unlink $test_db or warn $!;
     }
 }
 

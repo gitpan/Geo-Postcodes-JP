@@ -36,7 +36,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 
 #line 39 "DB.pm.tmpl"
 
