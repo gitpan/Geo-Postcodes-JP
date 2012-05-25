@@ -3,7 +3,7 @@
 
 use warnings;
 use strict;
-use Test::More tests => 13;
+use Test::More tests => 12;
 BEGIN { use_ok ('Geo::Postcodes::JP::DB') };
 use Geo::Postcodes::JP::DB qw/create_database/;
 use FindBin;
@@ -12,14 +12,6 @@ use utf8;
 # The directory with the schema in it, "../db".
 
 my $db_dir = "$FindBin::Bin/../db";
-
-# The file name (including the directory) of the schema file.
-
-my $schema_file = "$db_dir/schema.sql";
-
-# Test whether the schema file exists.
-
-ok (-f $schema_file, "The schema file exists where it is supposed to.");
 
 # A test database, in the current directory, which we will create
 # using the schema.
@@ -36,8 +28,7 @@ rm_db ();
 
 eval {
     create_database (
-    db_file => $test_db,
-        schema_file => $schema_file,
+        db_file => $test_db,
     );
 };
 
@@ -59,10 +50,8 @@ my $o;
 
 $o = Geo::Postcodes::JP::DB::make_database (
     db_file => $test_db,
-    schema_file => $schema_file,
     postcode_file => $test_pc_file,
 );
-#print "\n";
 
 ok ($o, "make database returned something");
 

@@ -6,7 +6,6 @@ use Test::More tests => 4;
 use Geo::Postcodes::JP::DB qw/make_database/;
 use utf8;
 
-my $schema_file = "$FindBin::Bin/../db/schema.sql";
 my $test_db = "$FindBin::Bin/bad-addresses.db";
 
 # Delete any existing database file.
@@ -16,7 +15,6 @@ rm_db ($test_db);
 my $o = make_database (
     db_file => "$test_db",
     postcode_file => "$FindBin::Bin/bad-addresses.csv",
-    schema_file => $schema_file,
 );
     
 ok ($o, "Made database from bad addresses");

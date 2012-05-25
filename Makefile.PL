@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile (
     NAME => 'Geo::Postcodes::JP',
-    VERSION => '0.010',
+    VERSION => '0.011',
     ABSTRACT => 'handle Japan Post Office postal code data',
     AUTHOR => 'Ben Bullock <bkb@cpan.org>',
     LICENSE => 'perl',
@@ -29,6 +29,11 @@ WriteMakefile (
             ],
         }
     },
+    # It seems to fail its tests on older Perls (thanks tester Nigel
+    # Horne at CPAN Testers for testing for me), so set minimum
+    # version here. The problem is some kind of Unicode thing related
+    # to the outputs of the SQLite queries.
+    MIN_PERL_VERSION => '5.008009',
 );
 
 # Local variables:

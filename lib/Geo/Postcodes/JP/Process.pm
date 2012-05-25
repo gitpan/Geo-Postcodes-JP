@@ -23,7 +23,7 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
 #line 26 "Process.pm.tmpl"
 

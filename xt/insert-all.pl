@@ -10,7 +10,6 @@ use Geo::Postcodes::JP::DB qw/make_database/;
 use PostCodeFiles qw/$db_file/;
 
 my $postcode_file = "$FindBin::Bin/KEN_ALL.CSV";
-my $schema_file = "$FindBin::Bin/../db/schema.sql";
 
 if (-f $db_file) {
     unlink $db_file or die $!;
@@ -19,5 +18,4 @@ if (-f $db_file) {
 make_database (
     db_file => $db_file,
     postcode_file => $postcode_file,
-    schema_file => $schema_file,
 );

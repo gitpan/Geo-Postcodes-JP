@@ -1,3 +1,6 @@
+my $schema_file = __FILE__;
+$schema_file =~ s!\.pm!/schema.sql!;
+
 =encoding UTF-8
 
 =head1 NAME
@@ -36,9 +39,10 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
-#line 39 "DB.pm.tmpl"
+#line 42 "DB.pm.tmpl"
+
 
 # Need the postcode-reading function.
 
@@ -65,7 +69,10 @@ use Carp;
 
 sub insert_schema
 {
-    my ($o, $schema_file) = @_;
+    my ($o, $schema_file_subs) = @_;
+    if ($schema_file_subs) {
+        $schema_file = $schema_file_subs;
+    }
     open my $input, "<", $schema_file
     or die "Can't open schema file '$schema_file': $!";
     my $schema = '';
@@ -769,7 +776,7 @@ my @fields = qw/
                    address_kanji
                    address_kana                   jigyosyo_id
                /;
-#line 703 "DB.pm.tmpl"
+#line 710 "DB.pm.tmpl"
 
 sub make_lookup_postcode_sql
 {
@@ -852,11 +859,9 @@ sub new
 
     my $o = create_database (
         db_file => '/path/to/file',
-        schema_file => '/path/to/schema/file',
     );
 
-Create the SQLite database specified by C<db_file> using the schema
-specified by C<schema_file>.
+Create the SQLite database specified by C<db_file>.
 
 The return value is a database handling object as returned by L</new>.
 
@@ -866,7 +871,9 @@ sub create_database
 {
     my (%inputs) = @_;
     my $db_file = $inputs{db_file};
-    my $schema_file = $inputs{schema_file};
+    if ($inputs{schema_file}) {
+        $schema_file = $inputs{schema_file};
+    }
     my $verbose = $inputs{verbose};
     if (! $db_file) {
         croak "Specify the database file";
@@ -887,15 +894,14 @@ sub create_database
 
     my $o = make_database (
         db_file => '/path/to/database/file',
-        schema_file => '/path/to/schema/file',
         postcode_file => '/path/to/postcode/file',
     );
 
-Make the database specified by C<db_file> using the schema specified
-by C<schema_file> from the data in C<postcode_file>. The schema is
-supplied in the F<db> subdirectory of the distribution in the file
-F<db/schema.sql>. This uses L</create_database> to create the database
-and L</insert_postcode_file> to insert the data into the database.
+Make the database specified by C<db_file> from the data in
+C<postcode_file>. The schema is supplied in the F<db> subdirectory of
+the distribution in the file F<db/schema.sql>. This uses
+L</create_database> to create the database and
+L</insert_postcode_file> to insert the data into the database.
 
 The return value is the database handling object, as returned by L</new>.
 

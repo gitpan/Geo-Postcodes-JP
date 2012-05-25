@@ -23,7 +23,6 @@ ok ($entry->[8] =~ /１７５２番地）$/, "End of entry OK");
 # variables.
 
 my $db_dir = "$FindBin::Bin/../db";
-my $schema_file = "$db_dir/schema.sql";
 
 my $test_db = "$FindBin::Bin/multiline.db";
 
@@ -31,7 +30,6 @@ rm_db ();
 
 my $o = make_database (
     db_file => $test_db,
-    schema_file => $schema_file,
     postcode_file => $data,
 );
 
