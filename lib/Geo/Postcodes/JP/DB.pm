@@ -39,7 +39,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 
 #line 42 "DB.pm.tmpl"
 
@@ -323,9 +323,6 @@ sub jigyosyo_insert_postcode
     if (! $postcode) {
         die "No postcode";
     }
-    if (0) {
-        print "Inserting $postcode\n";
-    }
     if (! $o->{jigyosyo_postcode_insert_sth}) {
         # SQL to insert postcodes with jigyosyo into the table.
 
@@ -487,9 +484,6 @@ sub insert_postcodes
 
     $o->{dbh}->{AutoCommit} = 0;
     for my $postcode (@$postcodes) {
-        # for my $k (keys %$postcode) {
-        #     print "$k -> $postcode->{$k}\n";
-        # }
         my %ids;
         my %values = process_line ($postcode);
         my $ken_kana = hw2katakana ($values{ken_kana});
@@ -502,16 +496,25 @@ sub insert_postcodes
         my $city_kanji = $values{city_kanji};
         my $city_id = $o->city_search ($city_kanji, $ken_id);
         if (! defined $city_id) {
-            $city_id = $o->city_insert ($city_kanji, $city_kana, $ken_id);
+            $city_id = $o->city_insert (
+                $city_kanji,
+                $city_kana,
+                $ken_id
+            );
         }
         my $address_kana = hw2katakana ($values{address_kana});
         my $address_kanji = $values{address_kanji};
-        my $address_id = $o->address_search ('address',
-                                         $address_kanji, $address_kana,
-                                         $city_id);
+        my $address_id = $o->address_search (
+            $address_kanji,
+            $address_kana,
+            $city_id,
+        );
         if (! defined $address_id) {
-            $address_id = $o->address_insert ($address_kanji,
-                                              $address_kana, $city_id);
+            $address_id = $o->address_insert (
+                $address_kanji,
+                $address_kana,
+                $city_id,
+            );
         }
         my $pc = $values{new_postcode};
         if (! defined $pc) {
@@ -776,7 +779,7 @@ my @fields = qw/
                    address_kanji
                    address_kana                   jigyosyo_id
                /;
-#line 710 "DB.pm.tmpl"
+#line 713 "DB.pm.tmpl"
 
 sub make_lookup_postcode_sql
 {

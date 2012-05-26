@@ -7,9 +7,9 @@ BEGIN {
     use lib "$FindBin::Bin";
 }
 use Geo::Postcodes::JP::DB;
-use PostCodeFiles qw/$jigyosyo_db $no_jigyosyo_db/;
+use PostCodeFiles qw/$jigyosyo_db $no_jigyosyo_db $dir/;
 
-my $jigyosyo_file = "$FindBin::Bin/JIGYOSYO.CSV";
+my $jigyosyo_file = "$dir/JIGYOSYO.CSV";
 my $db_dir = '/home/ben/projects/Geo-Postcodes-JP/xt';
 my $db_orig = $no_jigyosyo_db;
 my $db_copy = $jigyosyo_db;

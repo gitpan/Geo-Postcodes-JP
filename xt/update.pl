@@ -5,6 +5,7 @@ BEGIN {
     use FindBin;
     use lib "$FindBin::Bin/../lib";
 };
+use PostCodeFiles '$dir';
 use Geo::Postcodes::JP::Update 'update_files';
 
-update_files ("$FindBin::Bin/ken_all.zip", "$FindBin::Bin/jigyosyo.zip");
+update_files ("$dir/ken_all.zip", "$dir/jigyosyo.zip");

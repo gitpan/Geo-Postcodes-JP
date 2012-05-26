@@ -13,7 +13,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 
 #line 16 "Update.pm.tmpl"
 
@@ -67,6 +67,10 @@ sub download
         print "Local date: $local_date.\n";
 
         my $response = $agent->head($url);
+        if (! $response->is_success) {
+            warn "HEAD request for $url failed: " . $response->status;
+            return;
+        }
         # Check for errors
         my $remote_date = $response->last_modified;
         print "Remote date: $remote_date.\n";
@@ -120,7 +124,7 @@ same terms as the Perl programming language itself.
 =cut
 
 
-#line 107 "Update.pm.tmpl"
+#line 111 "Update.pm.tmpl"
 
 # Local variables:
 # mode: perl

@@ -23,7 +23,7 @@ use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 
 #line 26 "Process.pm.tmpl"
 
@@ -322,9 +322,9 @@ sub add_more_data
         else {
             if (defined $multi_lines->[$i]) {
                 # This is not the first value.
-                if ($line->[$i] ne $multi_lines->[$i]) {
-                    warn "Mismatch in field $i: $line->[$i] and $multi_lines->[$i]";
-                }
+#                if ($line->[$i] ne $multi_lines->[$i]) {
+#                    warn "Mismatch in field $i: $line->[$i] and $multi_lines->[$i]";
+#                }
             }
             else {
                 # Set from the first value.
@@ -589,7 +589,10 @@ sub remove_bad_addresses
     my %remove_stuff = (
         qr/(（その他）)/ => qr/(\(ｿﾉﾀ\))/,
         qr/(（次のビルを除く）)/ => qr/(\(ﾂｷﾞﾉﾋﾞﾙｦﾉｿﾞｸ\))/,
-        qr/(（.*丁目）)/ => qr/(\(.*ﾁｮｳﾒ\))/,
+# Don't remove this because
+# 23223,"474  ","4740002","ｱｲﾁｹﾝ","ｵｵﾌﾞｼ","ｷﾀｻｷﾁｮｳ(ﾁｮｳﾒ)","愛知県","大府市","北崎町（丁目）",1,0,1,0,0,0
+# 23223,"474  ","4740001","ｱｲﾁｹﾝ","ｵｵﾌﾞｼ","ｷﾀｻｷﾏﾁ","愛知県","大府市","北崎町",1,1,0,0,0,0
+#        qr/(（.*丁目）)/ => qr/(\(.*ﾁｮｳﾒ\))/,
     );
     for my $postcode (@$postcodes) {
         my $address_kanji = $postcode->[ADDRESS_KANJI];

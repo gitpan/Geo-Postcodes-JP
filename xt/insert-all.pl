@@ -7,9 +7,9 @@ BEGIN {
     use lib "$FindBin::Bin";
 }
 use Geo::Postcodes::JP::DB qw/make_database/;
-use PostCodeFiles qw/$db_file/;
-
-my $postcode_file = "$FindBin::Bin/KEN_ALL.CSV";
+use PostCodeFiles qw/$db_file $dir/;
+binmode STDOUT, ":utf8";
+my $postcode_file = "$dir/KEN_ALL.CSV";
 
 if (-f $db_file) {
     unlink $db_file or die $!;
