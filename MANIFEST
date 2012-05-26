@@ -1,11 +1,8 @@
 MANIFEST			This list of files
 Makefile.PL
-build/build.pl
-db/schema.sql
-doc/0TODO
-doc/problems.txt
 lib/Geo/Postcodes/JP.pm
 lib/Geo/Postcodes/JP/DB.pm
+lib/Geo/Postcodes/JP/DB/schema.sql
 lib/Geo/Postcodes/JP/Process.pm
 lib/Geo/Postcodes/JP/Update.pm
 t/Geo-Postcodes-JP-DB.t
