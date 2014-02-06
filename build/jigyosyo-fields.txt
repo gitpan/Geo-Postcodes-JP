@@ -1,0 +1,42 @@
+number
+As for the main postcode file.
+
+kana
+The name of the place of business in kana.
+
+kanji
+The name of the place of business in kanji.
+
+ken_kanji
+The kanji version of the prefecture name.
+
+city_kanji
+The kanji version of the city name.
+
+address_kanji
+The kanji version of the address name.
+
+street_number
+The exact street number of the place of business.
+
+new_postcode
+As for the "ken_all" fields.
+
+old_postcode
+As for the "ken_all" fields.
+
+post-office
+The post office which handles mail for this postcode.
+
+type
+0=Large company
+1=Private
+
+multiple-postcode
+0=Not multiple, also 1,2,3.
+
+Alteration code
+0=No change
+1=New addition
+2=Deleted
+

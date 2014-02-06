@@ -19,13 +19,16 @@ require Exporter;
                    process_jigyosyo_line
                    improve_postcodes
                /;
+%EXPORT_TAGS = (
+    all => \@EXPORT_OK,
+);
 use utf8;
 
 use warnings;
 use strict;
-our $VERSION = '0.013';
+our $VERSION = '0.014';
 
-#line 26 "Process.pm.tmpl"
+#line 29 "Process.pm.tmpl"
 
 # Lingua::JA::Moji supplies the routine to convert half-width katakana
 # into full-width katakana.
@@ -82,7 +85,7 @@ one-postcode-multiple-regions
 koushin-no-hyouji
 henkou-riyuu
 /;
-#line 71 "Process.pm.tmpl"
+#line 74 "Process.pm.tmpl"
 
 my @jigyosyo_fields = qw/
 number
@@ -99,7 +102,7 @@ type
 multiple-postcode
 Alteration code
 /;
-#line 78 "Process.pm.tmpl"
+#line 81 "Process.pm.tmpl"
 
 =head2 read_ken_all
 
@@ -256,7 +259,7 @@ See also the L<Japan Post explanation of the KEN_ALL.CSV file|http://www.post.ja
 
 =cut
 
-#line 147 "Process.pm.tmpl"
+#line 150 "Process.pm.tmpl"
 
 sub process_line
 {
@@ -300,7 +303,7 @@ use constant HAS_CHOUME => 11;
 use constant ONE_POSTCODE_MULTIPLE_REGIONS => 12;
 use constant KOUSHIN_NO_HYOUJI => 13;
 use constant HENKOU_RIYUU => 14;
-#line 179 "Process.pm.tmpl"
+#line 182 "Process.pm.tmpl"
 
 # Add more data to a single entry which spans multiple lines of the
 # input file.
@@ -556,7 +559,7 @@ in Japanese.
 
 =cut
 
-#line 361 "Process.pm.tmpl"
+#line 364 "Process.pm.tmpl"
 
 sub process_jigyosyo_line
 {

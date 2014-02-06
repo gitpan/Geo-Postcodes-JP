@@ -39,7 +39,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.013';
+our $VERSION = '0.014';
 
 #line 42 "DB.pm.tmpl"
 
@@ -901,10 +901,11 @@ sub create_database
     );
 
 Make the database specified by C<db_file> from the data in
-C<postcode_file>. The schema is supplied in the F<db> subdirectory of
-the distribution in the file F<db/schema.sql>. This uses
-L</create_database> to create the database and
-L</insert_postcode_file> to insert the data into the database.
+C<postcode_file>. The schema is supplied in the
+F<lib/Geo/Postcodes/JP/DB/> subdirectory of the distribution in the
+file F<schema.sql>. This uses L</create_database> to create the
+database and L</insert_postcode_file> to insert the data into the
+database.
 
 The return value is the database handling object, as returned by L</new>.
 

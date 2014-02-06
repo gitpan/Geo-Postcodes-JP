@@ -1,23 +1,29 @@
-MANIFEST			This list of files
-Makefile.PL
+build/address-fields.txt
+build/build.pl
+build/jigyosyo-fields.txt
+build/ken-all-fields.txt
+Changes
 lib/Geo/Postcodes/JP.pm
 lib/Geo/Postcodes/JP/DB.pm
 lib/Geo/Postcodes/JP/DB/schema.sql
 lib/Geo/Postcodes/JP/Process.pm
 lib/Geo/Postcodes/JP/Update.pm
+Makefile.PL
+MANIFEST			This list of files
+MANIFEST.SKIP
+print-places.pl
+README
+t/.gitignore
+t/bad-addresses.csv
+t/bad-addresses.t
 t/Geo-Postcodes-JP-DB.t
 t/Geo-Postcodes-JP-Process.t
 t/Geo-Postcodes-JP-Update.t
 t/Geo-Postcodes-JP.t
-t/KEN_SOME.CSV
-t/bad-addresses.csv
-t/bad-addresses.t
 t/jigyosyo-some.csv
+t/KEN_SOME.CSV
 t/multiline.csv
 t/multiline.t
-xt/insert-all.pl
-xt/insert-jigyosho.pl
-xt/lookup-single.pl
-xt/update.pl
+t/run.pl
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)

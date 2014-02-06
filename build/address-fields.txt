@@ -1,0 +1,24 @@
+postcode
+The seven-digit postcode itself, for example 0708033.
+
+ken_kanji
+The kanji form of the prefecture name, for example 北海道.
+
+ken_kana
+The kana form of the prefecture name, for example ホッカイドウ.
+
+city_kanji
+The kanji form of the city name, for example 旭川市. In some instances
+this data will consist of "gun" and "machi" or "shi" and "ku"
+information rather than just a city name, depending on the information
+in the Japan Post Office file itself.
+
+city_kana
+The kana form of the city name, for example アサヒカワシ.
+
+address_kanji
+The final part of the address in kanji, for example 神居町雨紛.
+
+address_kana
+The final part of the address in kana, for example カムイチョウウブン.
+

@@ -2,10 +2,11 @@ package Geo::Postcodes::JP;
 
 use warnings;
 use strict;
-our $VERSION = '0.013';
+our $VERSION = '0.014';
 
 
 use Geo::Postcodes::JP::DB;
+use utf8;
 
 sub new
 {
@@ -19,8 +20,28 @@ sub new
 sub postcode_to_address
 {
     my ($object, $postcode) = @_;
+    # Remove non-digits
+    $postcode =~ s/\D//g;
     my $addresses = $object->{db}->lookup_postcode ($postcode);
     return $addresses;
+}
+
+sub printed_address
+{
+    my ($object, $address) = @_;
+    my $o = '';
+#    $o .= "〒" . $address->{postcode} . "\n";
+    $o .= $address->{ken_kanji} . "\n";
+    $o .= $address->{city_kanji} . "\n";
+    $o .= $address->{address_kanji};
+    if ($address->{street_number}) {
+        $o .= $address->{street_number}
+    }
+    $o .= "\n";
+    if ($address->{jigyosyo_kanji}) {
+        $o .= $address->{jigyosyo_kanji} . "\n";
+    } 
+    return $o;
 }
 
 1;
@@ -61,7 +82,7 @@ existing SQLite database.
 
 "New" creates a new postcode-lookup object. The parameter is the path
 to the database file, which is the file created in the stage
-L<Building the database> above.
+L<Building the database>.
 
 =head2 postcode_to_address
 
@@ -142,7 +163,8 @@ generates short versions of the database for its testing.
 
 To build the full version of the database, it is necessary to download
 and process the post office's files. These files are not included in
-the distribution because they are very large files and change monthly.
+this distribution because they are very large files and change
+monthly.
 
 The scripts required are in the F<xt> directory of the
 distribution. These files must be edited to point to the location of
@@ -178,6 +200,12 @@ L<http://www.lemoda.net/japan/postcodes/index.html>: This is the
 module author's "scrapbook" page containing information from the
 internet about the postcode file. It includes links to relevant blog
 posts and links to software systems for handling the data.
+
+L<Parse::JapanesePostalCode> - PostalCode Parser for 日本郵政. This is
+a module which is equivalent to L<Geo::Postcodes::JP::Process> in this
+package, but written independently. See also
+<http://blog.yappo.jp/yappo/archives/000787.html|the author's blog
+post about the module> (in Japanese).
 
 =head1 TERMINOLOGY
 
@@ -264,7 +292,7 @@ same terms as the Perl programming language itself.
 =cut
 
 
-#line 117 "Main.pm.tmpl"
+#line 145 "Main.pm.tmpl"
 
 # Local variables:
 # mode: perl

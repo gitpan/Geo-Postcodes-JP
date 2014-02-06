@@ -1,0 +1,50 @@
+number
+The JIS code number for the region. The JIS standards for regions of
+Japan are numbered JIS X 0401 (1973) for the prefecture identification
+codes, and JIS X0402 (2003) identification codes for cities, towns and
+villages.
+
+old_postcode
+The old three or five digit postcode.
+
+new_postcode
+The new seven digit postcode.
+
+ken_kana
+The kana version of the prefecture.
+
+city_kana
+The kana version of the city.
+
+address_kana
+The kana version of the address.
+
+ken_kanji
+The kanji version of the prefecture.
+
+city_kanji
+The kanji version of the city.
+
+address_kanji
+The kanji version of the address.
+
+one-region-multiple-postcodes
+This is 1 if the same address has more than one postcode, zero
+otherwise.
+
+numbering-start
+Indicates if numbering starts, 1 if so.
+
+has-choume
+Indicates there is a division into "choume".
+
+one-postcode-multiple-regions
+This is 1 if the same postcode covers more than one region, zero
+otherwise.
+
+koushin-no-hyouji
+0 = no change, 1 = change, 2 = delete
+
+henkou-riyuu
+Reason for change.
+

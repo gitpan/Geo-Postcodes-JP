@@ -13,7 +13,7 @@ require Exporter;
 
 use warnings;
 use strict;
-our $VERSION = '0.013';
+our $VERSION = '0.014';
 
 #line 16 "Update.pm.tmpl"
 
@@ -58,6 +58,7 @@ sub download
     my ($agent, $url, $file) = @_;
     my $out = $url;
     $out =~ s!.*/!!;
+    my $response;
     if (-f $file) {
         # There is a local file, so first compare the dates of the remote
         # file and the local file, and only download the remote file if it
@@ -66,7 +67,7 @@ sub download
         my $local_date = mdate ($file);
         print "Local date: $local_date.\n";
 
-        my $response = $agent->head($url);
+        $response = $agent->head ($url);
         if (! $response->is_success) {
             warn "HEAD request for $url failed: " . $response->status;
             return;
@@ -75,8 +76,8 @@ sub download
         my $remote_date = $response->last_modified;
         print "Remote date: $remote_date.\n";
         if ($local_date < $remote_date) {
-            print "Remote file is newer, downloading.\n";
-            $response = $agent->get ($url, ":content_file" => $out);
+            print "Remote file is newer, downloading to $out.\n";
+            $response = $agent->get ($url, ":content_file" => $file);
         }
         else {
             print "Remote file is older, not downloading.\n";
@@ -84,10 +85,12 @@ sub download
     }
     else {
         # There is no local file, so just download it.
-        print "Local file '$file' does not exist.\n";
-        my $response = $agent->get ($url, ":content_file" => $out);
+        print "Local file '$file' does not exist: putting in $out.\n";
+        $response = $agent->get ($url, ":content_file" => $file);
     }
-
+    if (! $response->is_success ()) {
+        warn "Download failed: " . $response->status ();
+    }
 }
 
 # Given a file name, return its modification date.
@@ -124,7 +127,7 @@ same terms as the Perl programming language itself.
 =cut
 
 
-#line 111 "Update.pm.tmpl"
+#line 114 "Update.pm.tmpl"
 
 # Local variables:
 # mode: perl
